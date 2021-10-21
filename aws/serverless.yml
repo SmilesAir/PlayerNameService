@@ -1,0 +1,83 @@
+# serverless.yml
+service: player-name-service
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: us-west-2
+  stage: ${opt:stage, "development"}
+
+  environment:
+    PLAYER_TABLE: ${self:provider.stage}-playerTable
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:QueryItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.PLAYER_TABLE}"
+
+functions:
+  addPlayer:
+    handler: source/main.addPlayer
+    events:
+      - http:
+          path: addPlayer/{firstName}/lastName/{lastName}
+          method: post
+          cors: true
+  getAllPlayers:
+    handler: source/main.getAllPlayers
+    events:
+      - http:
+          path: getAllPlayers
+          method: get
+          cors: true
+  removePlayer:
+    handler: source/main.removePlayer
+    events:
+      - http:
+          path: removePlayer/{key}
+          method: post
+          cors: true
+  modifyPlayer:
+    handler: source/main.modifyPlayer
+    events:
+      - http:
+          path: modifyPlayer/{key}/firstName/{firstName}/lastName/{lastName}
+          method: post
+          cors: true
+
+resources:
+  Resources:
+    playerTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.PLAYER_TABLE}
+        AttributeDefinitions:
+          - AttributeName: key
+            AttributeType: S
+          - AttributeName: last_active
+            AttributeType: N
+          - AttributeName: membership
+            AttributeType: N
+        KeySchema:
+          - AttributeName: key
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: lastActiveIndex
+            KeySchema:
+              - AttributeName: last_active
+                KeyType: HASH
+            Projection:
+              ProjectionType: 'ALL'
+          - IndexName: membershipIndex
+            KeySchema:
+              - AttributeName: membership
+                KeyType: HASH
+            Projection:
+              ProjectionType: 'ALL'
+        BillingMode: PAY_PER_REQUEST
