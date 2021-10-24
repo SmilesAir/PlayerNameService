@@ -6,20 +6,33 @@ provider:
   runtime: nodejs12.x
   region: us-west-2
   stage: ${opt:stage, "development"}
+  lambdaHashingVersion: 20201221
 
   environment:
-    PLAYER_TABLE: ${self:provider.stage}-playerTable
+    PLAYER_TABLE: ${self:service}-${self:provider.stage}-playerTable
+    INFO_TABLE: ${self:service}-${self:provider.stage}-infoTable
+    CACHE_BUCKET: ${self:service}-${self:provider.stage}-cache-bucket
 
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-        - dynamodb:QueryItem
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.PLAYER_TABLE}"
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Scan
+            - dynamodb:PutItem
+            - dynamodb:DeleteItem
+            - dynamodb:QueryItem
+          Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.PLAYER_TABLE}"
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+          Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.INFO_TABLE}"
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+          Resource: "arn:aws:s3:::${self:provider.environment.CACHE_BUCKET}/*"
 
 functions:
   addPlayer:
@@ -56,6 +69,7 @@ resources:
     playerTable:
       Type: AWS::DynamoDB::Table
       Properties:
+        BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.PLAYER_TABLE}
         AttributeDefinitions:
           - AttributeName: key
@@ -80,4 +94,19 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: 'ALL'
+    infoTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
         BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.INFO_TABLE}
+        AttributeDefinitions:
+          - AttributeName: key
+            AttributeType: S
+        KeySchema:
+          - AttributeName: key
+            KeyType: HASH
+    cacheBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        AccessControl: Private
+        BucketName: ${self:provider.environment.CACHE_BUCKET}
