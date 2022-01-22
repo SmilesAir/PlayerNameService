@@ -25,15 +25,15 @@ The allPlayerData schema
 | country | string | 3 letter country abbreviation |
 | gender | string | M, F, X |
 
-**removePlayer** - POST. Removes a player
-URL: https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/removePlayer/{key}
+**removePlayer** - POST. Removes a player\
+URL: https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/removePlayer/{key}\
 key: The GUID key of the player to remove
 
-**modifyPlayer** - POST. Modify a player's data by key
-URL: https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/modifyPlayer/{key}/firstName/{firstName}/lastName/{lastName}
-key: The GUID key of the player to modify
-firstName: First Name
-lastName: Last Name
+**modifyPlayer** - POST. Modify a player's data by key\
+URL: https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/modifyPlayer/{key}/firstName/{firstName}/lastName/{lastName}\
+key: The GUID key of the player to modify\
+firstName: First Name\
+lastName: Last Name\
 body: Optional. JSON string containing optional fields:
 | Property    | Type | Description |
 | --- | --- | --- |
