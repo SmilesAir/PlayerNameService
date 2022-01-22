@@ -5,7 +5,7 @@ This is a microservice that manages data associated with players. ie. Name, Coun
 Example **getAllPlayers** call in [jsbin](https://jsbin.com/pezakarora/edit?js,console)
 
 ## Interface
-**getAllPlayers** - GET. Returns a JSON object containing all known players. 
+**getAllPlayers** - GET. Returns a JSON object containing all known players.  
 URL: https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/getAllPlayers
 
 Return:
