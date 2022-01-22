@@ -5,7 +5,8 @@ This is a microservice that manages data associated with players. ie. Name, Coun
 Example **getAllPlayers** call in [jsbin](https://jsbin.com/pezakarora/edit?js,console)
 
 ## Interface
-**getAllPlayers** - GET. Returns a JSON object containing all known players.  
+### getAllPlayers
+GET. Returns a JSON object containing all known players.  
 URL: https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/getAllPlayers
 
 Return:
@@ -25,11 +26,13 @@ The allPlayerData schema
 | country | string | 3 letter country abbreviation |
 | gender | string | M, F, X |
 
-**removePlayer** - POST. Removes a player  
+### removePlayer
+POST. Removes a player  
 URL: https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/removePlayer/{key}  
 key: The GUID key of the player to remove
 
-**modifyPlayer** - POST. Modify a player's data by key  
+### modifyPlayer
+POST. Modify a player's data by key  
 URL: https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/modifyPlayer/{key}/firstName/{firstName}/lastName/{lastName}  
 key: The GUID key of the player to modify  
 firstName: First Name  
