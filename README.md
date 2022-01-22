@@ -2,7 +2,7 @@
 
 This is a microservice that manages data associated with players. ie. Name, Country, Gender, FPA Membership Number
 
-Example **getAllPlayers** call in [jsbin](https://jsbin.com/pezakarora/edit?js,console)
+Example **getAllPlayers** call in [jsbin](https://jsbin.com/qakiduqaji/edit?js,console)
 
 ## Interface
 ### getAllPlayers
