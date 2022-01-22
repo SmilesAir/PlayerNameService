@@ -40,3 +40,10 @@ body: Optional. JSON string containing optional fields:
 | membership | number | FPA Membership Number |
 | country | string | 3 letter country abbreviation |
 | gender | string | M, F, X |
+
+## Implementation
+Data is stored in DynamoDB and cached in S3. Aws Lambda handles all the requests, queries the data, and return the result.
+
+There are 2 DynamoDB tables. An Info table that store whether the S3 cache needs to be updated and a Player table. The Player table has a row for each player. The Key is a GUID, and the data are all the properties for the player.
+
+When **getAllPlayers** is called, a scan of the Player table is done, then the results are cached in S3. If **removePlayer** or **modifyPlayer** is called, the cache is marked as dirty and the next **getAllPlayers** will scan the Player table and cache the results again.
