@@ -1,7 +1,4 @@
 
-const AWS = require('aws-sdk')
-let docClient = new AWS.DynamoDB.DocumentClient()
-
 module.exports.handler = async function(event, context, callback, func) {
     try {
         let result = await func(event, context)

@@ -1,3 +1,4 @@
+/* eslint-disable no-alert */
 /* eslint-disable no-loop-func */
 /* eslint-disable func-style */
 /* eslint-disable no-nested-ternary */
@@ -10,7 +11,8 @@ import { useForm, useField, splitFormProps } from "react-form"
 
 require("./index.less")
 
-const countryCodes = ["AFG", "ALA", "ALB", "DZA", "ASM", "AND", "AGO", "AIA", "ATA", "ATG", "ARG", "ARM", "ABW", "AUS", "AUT", "AZE", "BHS", "BHR", "BGD", "BRB", "BLR", "BEL", "BLZ", "BEN", "BMU", "BTN", "BOL", "BES", "BIH", "BWA", "BVT", "BRA", "IOT", "BRN", "BGR", "BFA", "BDI", "KHM", "CMR", "CAN", "CPV", "CYM", "CAF", "TCD", "CHL", "CHN", "CXR", "CCK", "COL", "COM", "COG", "COD", "COK", "CRI", "CIV", "HRV", "CUB", "CUW", "CYP", "CZE", "DNK", "DJI", "DMA", "DOM", "ECU", "EGY", "SLV", "GNQ", "ERI", "EST", "ETH", "FLK", "FRO", "FJI", "FIN", "FRA", "GUF", "PYF", "ATF", "GAB", "GMB", "GEO", "DEU", "GHA", "GIB", "GRC", "GRL", "GRD", "GLP", "GUM", "GTM", "GGY", "GIN", "GNB", "GUY", "HTI", "HMD", "VAT", "HND", "HKG", "HUN", "ISL", "IND", "IDN", "IRN", "IRQ", "IRL", "IMN", "ISR", "ITA", "JAM", "JPN", "JEY", "JOR", "KAZ", "KEN", "KIR", "PRK", "KOR", "XKX", "KWT", "KGZ", "LAO", "LVA", "LBN", "LSO", "LBR", "LBY", "LIE", "LTU", "LUX", "MAC", "MKD", "MDG", "MWI", "MYS", "MDV", "MLI", "MLT", "MHL", "MTQ", "MRT", "MUS", "MYT", "MEX", "FSM", "MDA", "MCO", "MNG", "MNE", "MSR", "MAR", "MOZ", "MMR", "NAM", "NRU", "NPL", "NLD", "NCL", "NZL", "NIC", "NER", "NGA", "NIU", "NFK", "MNP", "NOR", "OMN", "PAK", "PLW", "PSE", "PAN", "PNG", "PRY", "PER", "PHL", "PCN", "POL", "PRT", "PRI", "QAT", "SRB", "REU", "ROU", "RUS", "RWA", "BLM", "SHN", "KNA", "LCA", "MAF", "SPM", "VCT", "WSM", "SMR", "STP", "SAU", "SEN", "SYC", "SLE", "SGP", "SXM", "SVK", "SVN", "SLB", "SOM", "ZAF", "SGS", "SSD", "ESP", "LKA", "SDN", "SUR", "SJM", "SWZ", "SWE", "CHE", "SYR", "TWN", "TJK", "TZA", "THA", "TLS", "TGO", "TKL", "TON", "TTO", "TUN", "TUR", "XTX", "TKM", "TCA", "TUV", "UGA", "UKR", "ARE", "GBR", "USA", "UMI", "URY", "UZB", "VUT", "VEN", "VNM", "VGB", "VIR", "WLF", "ESH", "YEM", "ZMB", "ZWE"]
+const awsPath = __STAGE__ === "DEVELOPMENT" ? "https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/" : "https://4wnda3jb78.execute-api.us-west-2.amazonaws.com/production/"
+const countryCodes = [ "AFG", "ALA", "ALB", "DZA", "ASM", "AND", "AGO", "AIA", "ATA", "ATG", "ARG", "ARM", "ABW", "AUS", "AUT", "AZE", "BHS", "BHR", "BGD", "BRB", "BLR", "BEL", "BLZ", "BEN", "BMU", "BTN", "BOL", "BES", "BIH", "BWA", "BVT", "BRA", "IOT", "BRN", "BGR", "BFA", "BDI", "KHM", "CMR", "CAN", "CPV", "CYM", "CAF", "TCD", "CHL", "CHN", "CXR", "CCK", "COL", "COM", "COG", "COD", "COK", "CRI", "CIV", "HRV", "CUB", "CUW", "CYP", "CZE", "DNK", "DJI", "DMA", "DOM", "ECU", "EGY", "SLV", "GNQ", "ERI", "EST", "ETH", "FLK", "FRO", "FJI", "FIN", "FRA", "GUF", "PYF", "ATF", "GAB", "GMB", "GEO", "DEU", "GHA", "GIB", "GRC", "GRL", "GRD", "GLP", "GUM", "GTM", "GGY", "GIN", "GNB", "GUY", "HTI", "HMD", "VAT", "HND", "HKG", "HUN", "ISL", "IND", "IDN", "IRN", "IRQ", "IRL", "IMN", "ISR", "ITA", "JAM", "JPN", "JEY", "JOR", "KAZ", "KEN", "KIR", "PRK", "KOR", "XKX", "KWT", "KGZ", "LAO", "LVA", "LBN", "LSO", "LBR", "LBY", "LIE", "LTU", "LUX", "MAC", "MKD", "MDG", "MWI", "MYS", "MDV", "MLI", "MLT", "MHL", "MTQ", "MRT", "MUS", "MYT", "MEX", "FSM", "MDA", "MCO", "MNG", "MNE", "MSR", "MAR", "MOZ", "MMR", "NAM", "NRU", "NPL", "NLD", "NCL", "NZL", "NIC", "NER", "NGA", "NIU", "NFK", "MNP", "NOR", "OMN", "PAK", "PLW", "PSE", "PAN", "PNG", "PRY", "PER", "PHL", "PCN", "POL", "PRT", "PRI", "QAT", "SRB", "REU", "ROU", "RUS", "RWA", "BLM", "SHN", "KNA", "LCA", "MAF", "SPM", "VCT", "WSM", "SMR", "STP", "SAU", "SEN", "SYC", "SLE", "SGP", "SXM", "SVK", "SVN", "SLB", "SOM", "ZAF", "SGS", "SSD", "ESP", "LKA", "SDN", "SUR", "SJM", "SWZ", "SWE", "CHE", "SYR", "TWN", "TJK", "TZA", "THA", "TLS", "TGO", "TKL", "TON", "TTO", "TUN", "TUR", "XTX", "TKM", "TCA", "TUV", "UGA", "UKR", "ARE", "GBR", "USA", "UMI", "URY", "UZB", "VUT", "VEN", "VNM", "VGB", "VIR", "WLF", "ESH", "YEM", "ZMB", "ZWE" ]
 let allData = Mobx.observable({
     playerData: {}
 })
@@ -217,7 +219,7 @@ function PlayerOutput() {
 }
 
 function getAllPlayers() {
-    getData("https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/getAllPlayers").then((response) => {
+    getData(`${awsPath}getAllPlayers`).then((response) => {
         allData.playerData = response.players
 
         console.log(response)
@@ -228,11 +230,31 @@ function getAllPlayers() {
     })
 }
 
+function importFromAllData(e) {
+    console.log(e.target.value)
+
+    const fileReader = new FileReader()
+    fileReader.readAsText(e.target.files[0])
+    fileReader.onload = (x) => {
+        const jsonData = JSON.parse(x.target.result)
+        console.log(jsonData)
+
+        postData(`${awsPath}importFromAllData`, {
+            allData: jsonData
+        }).then((response) => {
+            console.log(response)
+            alert(`Imported ${response.importedPlayersCount} players`)
+        }).catch((error) => {
+            console.error(error)
+        })
+    }
+}
+
 function PlayerNamesApi() {
     // Use the useForm hook to create a form instance
     const AddPlayerForm = useForm({
         onSubmit: async(values, instance) => {
-            postData(`https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/addPlayer/${values.firstName}/lastName/${values.lastName}`, {
+            postData(`${awsPath}addPlayer/${values.firstName}/lastName/${values.lastName}`, {
                 membership: parseInt(values.membership, 10),
                 country: values.country,
                 gender: values.gender
@@ -252,7 +274,7 @@ function PlayerNamesApi() {
                 let infoPieces = line.split("\t")
                 let names = infoPieces[0].split(" ")
 
-                postData(`https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/addPlayer/${names[0]}/lastName/${names[1]}`, {
+                postData(`${awsPath}addPlayer/${names[0]}/lastName/${names[1]}`, {
                     country: infoPieces[1],
                     gender: infoPieces[2].toUpperCase()
                 }).then((response) => {
@@ -267,7 +289,7 @@ function PlayerNamesApi() {
 
     const RemovePlayerForm = useForm({
         onSubmit: async(values, instance) => {
-            postData(`https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/removePlayer/${values.key.trim()}`, {}).then((response) => {
+            postData(`${awsPath}removePlayer/${values.key.trim()}`, {}).then((response) => {
                 console.log(response)
             }).catch((error) => {
                 console.error(error)
@@ -278,7 +300,7 @@ function PlayerNamesApi() {
 
     const ModifyPlayerForm = useForm({
         onSubmit: async(values, instance) => {
-            postData(`https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/modifyPlayer/${values.key.trim()}/firstName/${values.firstName}/lastName/${values.lastName}`, {
+            postData(`${awsPath}modifyPlayer/${values.key.trim()}/firstName/${values.firstName}/lastName/${values.lastName}`, {
                 membership: parseInt(values.membership, 10),
                 country: values.country,
                 gender: values.gender
@@ -293,7 +315,7 @@ function PlayerNamesApi() {
 
     const ModifyMembershipBulkForm = useForm({
         onSubmit: async(values, instance) => {
-            getData("https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/getAllPlayers").then((getResp) => {
+            getData(`${awsPath}getAllPlayers`).then((getResp) => {
                 let lines = values.bulk.split("\n")
                 for (let line of lines) {
                     let infoPieces = line.split("\t")
@@ -306,7 +328,7 @@ function PlayerNamesApi() {
                             if (player.firstName === infoPieces[0] && player.lastName === infoPieces[1]) {
                                 console.log("found player " + player.firstName + " " + player.lastName + ": " + membership)
 
-                                postData(`https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/modifyPlayer/${player.key}/firstName/${player.firstName}/lastName/${player.lastName}`, {
+                                postData(`${awsPath}modifyPlayer/${player.key}/firstName/${player.firstName}/lastName/${player.lastName}`, {
                                     membership: membership,
                                     country: player.country,
                                     gender: player.gender
@@ -334,6 +356,12 @@ function PlayerNamesApi() {
             <div>
                 <button onClick={getAllPlayers}>Get</button>
                 <PlayerOutput />
+            </div>
+            <h1>
+                Import From All Data
+            </h1>
+            <div>
+                <input type="file" accept=".json" onChange={(e) => importFromAllData(e)}/>
             </div>
             <AddPlayerForm.Form>
                 <h1>

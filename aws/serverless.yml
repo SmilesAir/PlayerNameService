@@ -3,7 +3,7 @@ service: player-name-service
 
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs16.x
   region: us-west-2
   stage: ${opt:stage, "development"}
   lambdaHashingVersion: 20201221
@@ -22,6 +22,7 @@ provider:
             - dynamodb:PutItem
             - dynamodb:DeleteItem
             - dynamodb:QueryItem
+            - dynamodb:BatchWriteItem
           Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.PLAYER_TABLE}"
         - Effect: Allow
           Action:
@@ -61,6 +62,13 @@ functions:
     events:
       - http:
           path: modifyPlayer/{key}/firstName/{firstName}/lastName/{lastName}
+          method: post
+          cors: true
+  importFromAllData:
+    handler: source/main.importFromAllData
+    events:
+      - http:
+          path: importFromAllData
           method: post
           cors: true
 

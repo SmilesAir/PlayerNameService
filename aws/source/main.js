@@ -7,7 +7,7 @@ const s3Client = new S3Client({ region: process.region })
 const Common = require("./common.js")
 
 const infoKey = "info"
-const cachedDataName = "AllPlayerData.json"
+const cachedDataName = `AllPlayerData-${process.stage}.json`
 
 
 module.exports.addPlayer = (e, c, cb) => { Common.handler(e, c, cb, async (event, context) => {
@@ -45,8 +45,6 @@ module.exports.addPlayer = (e, c, cb) => { Common.handler(e, c, cb, async (event
 })}
 
 module.exports.getAllPlayers = (e, c, cb) => { Common.handler(e, c, cb, async (event, context) => {
-
-
     let allPlayers
     let isPlayerDataDirty = true
     let getInfoParams = {
@@ -156,6 +154,37 @@ module.exports.modifyPlayer = (e, c, cb) => { Common.handler(e, c, cb, async (ev
     }
 })}
 
+module.exports.importFromAllData = (e, c, cb) => { Common.handler(e, c, cb, async (event, context) => {
+    let request = JSON.parse(event.body) || {}
+    const allData = request.allData
+
+    if (allData === undefined || allData.playersData === undefined) {
+        throw "Missing playersData"
+    }
+
+    let putRequests = []
+    for (let playerDataKey in allData.playersData) {
+        const playerData = allData.playersData[playerDataKey]
+        let putPlayer = Object.assign({
+            key: playerDataKey
+        }, playerData)
+        putRequests.push({
+            PutRequest: {
+                Item: putPlayer
+            }
+        })
+    }
+
+    console.log(putRequests)
+
+    await batchPutItems(process.env.PLAYER_TABLE, putRequests)
+
+    return {
+        success: true,
+        importedPlayersCount: putRequests.length
+    }
+})}
+
 async function scanPlayers() {
     let allPlayers = {}
 
@@ -188,4 +217,17 @@ async function setIsPlayerDataDirty(isDirty) {
     await docClient.put(putInfoParams).promise().catch((error) => {
         throw error
     })
+}
+
+async function batchPutItems(tableName, putRequests) {
+    for (let i = 0; i < putRequests.length; i += 25) {
+        let params = {
+            RequestItems: {
+                [tableName]: putRequests.slice(i, i + 25)
+            }
+        }
+        await docClient.batchWrite(params).promise().catch((error) => {
+            throw error
+        })
+    }
 }
