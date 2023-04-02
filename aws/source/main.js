@@ -186,6 +186,51 @@ module.exports.importFromAllData = (e, c, cb) => { Common.handler(e, c, cb, asyn
     }
 })}
 
+module.exports.assignAlias = (e, c, cb) => { Common.handler(e, c, cb, async (event, context) => {
+    let aliasKey = decodeURIComponent(event.pathParameters.aliasKey)
+    let request = JSON.parse(event.body) || {}
+    let originalKey = request.originalKey
+
+    if (originalKey === aliasKey) {
+        throw "Error. Trying to assign alias to self"
+    }
+
+    if (aliasKey === undefined) {
+        throw "Error. Invalid key"
+    }
+
+    if (originalKey !== undefined) {
+        let updateParams = {
+            TableName: process.env.PLAYER_TABLE,
+            Key: {"key": aliasKey},
+            UpdateExpression: "set aliasKey = :aliasKey",
+            ExpressionAttributeValues: {
+                ":aliasKey": originalKey
+            },
+            ReturnValues: "NONE"
+        }
+        await docClient.update(updateParams).promise().catch((error) => {
+            throw error
+        })
+    } else {
+        let updateParams = {
+            TableName: process.env.PLAYER_TABLE,
+            Key: {"key": aliasKey},
+            UpdateExpression: "remove aliasKey",
+            ReturnValues: "NONE"
+        }
+        await docClient.update(updateParams).promise().catch((error) => {
+            throw error
+        })
+    }
+
+    await setIsPlayerDataDirty(true)
+
+    return {
+        success: true
+    }
+})}
+
 async function scanPlayers() {
     let allPlayers = {}
 

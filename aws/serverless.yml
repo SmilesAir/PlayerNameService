@@ -23,6 +23,7 @@ provider:
             - dynamodb:DeleteItem
             - dynamodb:QueryItem
             - dynamodb:BatchWriteItem
+            - dynamodb:UpdateItem
           Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.PLAYER_TABLE}"
         - Effect: Allow
           Action:
@@ -69,6 +70,13 @@ functions:
     events:
       - http:
           path: importFromAllData
+          method: post
+          cors: true
+  assignAlias:
+    handler: source/main.assignAlias
+    events:
+      - http:
+          path: assignAlias/{aliasKey}
           method: post
           cors: true
 
@@ -118,32 +126,12 @@ resources:
       Properties:
         AccessControl: Private
         BucketName: ${self:provider.environment.CACHE_BUCKET}
-    staticSite:
-      Type: AWS::S3::Bucket
-      Properties:
-        AccessControl: PublicRead
-        BucketName: ${self:service}-${self:provider.stage}
-        WebsiteConfiguration:
-          IndexDocument: index.html
-    staticSiteS3BucketPolicy:
-      Type: AWS::S3::BucketPolicy
-      Properties:
-        Bucket:
-          Ref: staticSite
-        PolicyDocument:
-          Statement:
-            - Sid: PublicReadGetObject
-              Effect: Allow
-              Principal: "*"
-              Action:
-              - s3:GetObject
-              Resource:
-                Fn::Join: [
-                  "", [
-                    "arn:aws:s3:::",
-                    {
-                      "Ref": "staticSite"
-                    },
-                    "/*"
-                  ]
-                ]
+
+plugins:
+  - fullstack-serverless
+
+custom:
+  fullstack:
+    bucketName: deployed-bucket
+    distributionFolder: ../client/builds/web
+    indexDocument: index.html

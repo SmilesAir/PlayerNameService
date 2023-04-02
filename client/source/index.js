@@ -8,13 +8,16 @@ const React = require("react")
 const ReactDOM = require("react-dom")
 const Mobx = require("mobx")
 import { useForm, useField, splitFormProps } from "react-form"
+const StringSimilarity = require("string-similarity")
 
 require("./index.less")
 
 const awsPath = __STAGE__ === "DEVELOPMENT" ? "https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/" : "https://4wnda3jb78.execute-api.us-west-2.amazonaws.com/production/"
 const countryCodes = [ "AFG", "ALA", "ALB", "DZA", "ASM", "AND", "AGO", "AIA", "ATA", "ATG", "ARG", "ARM", "ABW", "AUS", "AUT", "AZE", "BHS", "BHR", "BGD", "BRB", "BLR", "BEL", "BLZ", "BEN", "BMU", "BTN", "BOL", "BES", "BIH", "BWA", "BVT", "BRA", "IOT", "BRN", "BGR", "BFA", "BDI", "KHM", "CMR", "CAN", "CPV", "CYM", "CAF", "TCD", "CHL", "CHN", "CXR", "CCK", "COL", "COM", "COG", "COD", "COK", "CRI", "CIV", "HRV", "CUB", "CUW", "CYP", "CZE", "DNK", "DJI", "DMA", "DOM", "ECU", "EGY", "SLV", "GNQ", "ERI", "EST", "ETH", "FLK", "FRO", "FJI", "FIN", "FRA", "GUF", "PYF", "ATF", "GAB", "GMB", "GEO", "DEU", "GHA", "GIB", "GRC", "GRL", "GRD", "GLP", "GUM", "GTM", "GGY", "GIN", "GNB", "GUY", "HTI", "HMD", "VAT", "HND", "HKG", "HUN", "ISL", "IND", "IDN", "IRN", "IRQ", "IRL", "IMN", "ISR", "ITA", "JAM", "JPN", "JEY", "JOR", "KAZ", "KEN", "KIR", "PRK", "KOR", "XKX", "KWT", "KGZ", "LAO", "LVA", "LBN", "LSO", "LBR", "LBY", "LIE", "LTU", "LUX", "MAC", "MKD", "MDG", "MWI", "MYS", "MDV", "MLI", "MLT", "MHL", "MTQ", "MRT", "MUS", "MYT", "MEX", "FSM", "MDA", "MCO", "MNG", "MNE", "MSR", "MAR", "MOZ", "MMR", "NAM", "NRU", "NPL", "NLD", "NCL", "NZL", "NIC", "NER", "NGA", "NIU", "NFK", "MNP", "NOR", "OMN", "PAK", "PLW", "PSE", "PAN", "PNG", "PRY", "PER", "PHL", "PCN", "POL", "PRT", "PRI", "QAT", "SRB", "REU", "ROU", "RUS", "RWA", "BLM", "SHN", "KNA", "LCA", "MAF", "SPM", "VCT", "WSM", "SMR", "STP", "SAU", "SEN", "SYC", "SLE", "SGP", "SXM", "SVK", "SVN", "SLB", "SOM", "ZAF", "SGS", "SSD", "ESP", "LKA", "SDN", "SUR", "SJM", "SWZ", "SWE", "CHE", "SYR", "TWN", "TJK", "TZA", "THA", "TLS", "TGO", "TKL", "TON", "TTO", "TUN", "TUR", "XTX", "TKM", "TCA", "TUV", "UGA", "UKR", "ARE", "GBR", "USA", "UMI", "URY", "UZB", "VUT", "VEN", "VNM", "VGB", "VIR", "WLF", "ESH", "YEM", "ZMB", "ZWE" ]
 let allData = Mobx.observable({
-    playerData: {}
+    playerData: {},
+    showAllPlayers: false,
+    searchKeys: undefined
 })
 
 function validateKey(value) {
@@ -118,6 +121,66 @@ function LastNameField() {
     )
 }
 
+function SearchNameField() {
+    const {
+        meta: { error, isTouched, isValidating },
+        getInputProps
+    } = useField("searchName", {
+        validate: undefined
+    })
+
+    return (
+        <div>
+            <input {...getInputProps()} />{" "}
+            {isValidating ?
+                <em>Validating...</em> :
+                isTouched && error ?
+                    <em>{error}</em> :
+                    null}
+        </div>
+    )
+}
+
+function OriginalPlayerKey() {
+    const {
+        meta: { error, isTouched, isValidating },
+        getInputProps
+    } = useField("originalKey", {
+        validate: undefined
+    })
+
+    return (
+        <div>
+            <input {...getInputProps()} />{" "}
+            {isValidating ?
+                <em>Validating...</em> :
+                isTouched && error ?
+                    <em>{error}</em> :
+                    null}
+        </div>
+    )
+}
+
+function AliasPlayerKey() {
+    const {
+        meta: { error, isTouched, isValidating },
+        getInputProps
+    } = useField("aliasKey", {
+        validate: validateKey
+    })
+
+    return (
+        <div>
+            <input {...getInputProps()} />{" "}
+            {isValidating ?
+                <em>Validating...</em> :
+                isTouched && error ?
+                    <em>{error}</em> :
+                    null}
+        </div>
+    )
+}
+
 function MembershipField() {
     const {
         meta: { error, isTouched, isValidating },
@@ -186,7 +249,49 @@ function BulkField() {
     )
 }
 
+function PlayerSearchOutput() {
+    if (allData.searchKeys === undefined) {
+        return null
+    }
+
+    let rows = []
+    for (let playerKey of allData.searchKeys) {
+        let player = allData.playerData[playerKey]
+        console.log(player)
+        rows.push(
+            <tr key={player.key}>
+                <td>{player.key}</td>
+                <td>{player.firstName}</td>
+                <td>{player.lastName}</td>
+                <td>{player.membership}</td>
+                <td>{player.country}</td>
+                <td>{player.gender}</td>
+                <td>{player.createdAt}</td>
+                <td>{player.lastActive}</td>
+                <td>{player.aliasKey}</td>
+            </tr>
+        )
+    }
+
+    return (
+        <table>
+            <thead>
+                <tr>
+                    <th colSpan="20">Results</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows}
+            </tbody>
+        </table>
+    )
+}
+
 function PlayerOutput() {
+    if (allData.showAllPlayers !== true) {
+        return null
+    }
+
     let rows = []
     for (let playerKey in allData.playerData) {
         let player = allData.playerData[playerKey]
@@ -200,6 +305,7 @@ function PlayerOutput() {
                 <td>{player.gender}</td>
                 <td>{player.createdAt}</td>
                 <td>{player.lastActive}</td>
+                <td>{player.aliasKey}</td>
             </tr>
         )
     }
@@ -218,8 +324,13 @@ function PlayerOutput() {
     )
 }
 
+function getAllPlayersAndShow() {
+    allData.showAllPlayers = true
+    getAllPlayers()
+}
+
 function getAllPlayers() {
-    getData(`${awsPath}getAllPlayers`).then((response) => {
+    return getData(`${awsPath}getAllPlayers`).then((response) => {
         allData.playerData = response.players
 
         console.log(response)
@@ -248,6 +359,39 @@ function importFromAllData(e) {
             console.error(error)
         })
     }
+}
+
+function getSimilarPlayersByName(name) {
+    let cachedPlayers = []
+    for (let playerKey in allData.playerData) {
+        let player = allData.playerData[playerKey]
+        cachedPlayers.push({
+            key: player.key,
+            name: `${player.firstName} ${player.lastName}`
+        })
+    }
+
+    let bestNames = []
+    const maxCount = 10
+    for (let cachedPlayer of cachedPlayers) {
+        let cachedName = cachedPlayer.name
+        let similar = StringSimilarity.compareTwoStrings(name, cachedName)
+        if (similar > 0) {
+            if (bestNames.length < maxCount || similar > bestNames[maxCount - 1].score) {
+                let index = bestNames.findIndex((data) => data.score < similar)
+                bestNames.splice(index >= 0 ? index : bestNames.length, 0, {
+                    key: cachedPlayer.key,
+                    score: similar
+                })
+
+                if (bestNames.length > maxCount) {
+                    bestNames.pop()
+                }
+            }
+        }
+    }
+
+    return bestNames.map((data) => data.key)
 }
 
 function PlayerNamesApi() {
@@ -348,13 +492,68 @@ function PlayerNamesApi() {
         debugForm: false
     })
 
+    const FindPlayerForm = useForm({
+        onSubmit: async(values, instance) => {
+            getAllPlayers().then(() => {
+                allData.searchKeys = getSimilarPlayersByName(values.searchName)
+                render()
+            }).catch((error) => {
+                console.error(error)
+            })
+        },
+        debugForm: false
+    })
+
+    const AssignAliasForm = useForm({
+        onSubmit: async(values, instance) => {
+            postData(`${awsPath}assignAlias/${values.aliasKey.trim()}`, {
+                originalKey: values.originalKey && values.originalKey.trim().length > 0 ? values.originalKey.trim() : undefined
+            }).then((response) => {
+                console.log(response)
+            }).catch((error) => {
+                console.error(error)
+            })
+        },
+        debugForm: false
+    })
+
     return (
         <div>
+            <FindPlayerForm.Form>
+                <h1>
+                    Find Player
+                </h1>
+                <div className="formField">
+                    <label>
+                        First Name: <SearchNameField />
+                    </label>
+                </div>
+                <button type="submit">
+                    Find Players
+                </button>
+            </FindPlayerForm.Form>
+            <PlayerSearchOutput />
+            <AssignAliasForm.Form>
+                <h1>
+                    Assign Alias
+                </h1>
+                <div className="formField">
+                    <label>
+                        Original Player Key: <OriginalPlayerKey />
+                    </label>
+                    <label>
+                        Alias Player Key: <AliasPlayerKey />
+                    </label>
+                </div>
+                <button type="submit">
+                    Assign Alias
+                </button>
+            </AssignAliasForm.Form>
             <h1>
                 Get All Players
             </h1>
             <div>
-                <button onClick={getAllPlayers}>Get</button>
+                <button onClick={getAllPlayersAndShow}>Get</button>
                 <PlayerOutput />
             </div>
             <h1>
