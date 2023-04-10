@@ -257,7 +257,6 @@ function PlayerSearchOutput() {
     let rows = []
     for (let playerKey of allData.searchKeys) {
         let player = allData.playerData[playerKey]
-        console.log(player)
         rows.push(
             <tr key={player.key}>
                 <td>{player.key}</td>
@@ -268,6 +267,7 @@ function PlayerSearchOutput() {
                 <td>{player.gender}</td>
                 <td>{player.createdAt}</td>
                 <td>{player.lastActive}</td>
+                <td>{player.fpaWebsiteId}</td>
                 <td>{player.aliasKey}</td>
             </tr>
         )
@@ -367,16 +367,20 @@ function getSimilarPlayersByName(name) {
         let player = allData.playerData[playerKey]
         cachedPlayers.push({
             key: player.key,
-            name: `${player.firstName} ${player.lastName}`
+            firstName: player.firstName.toLowerCase(),
+            lastName: player.lastName.toLowerCase(),
+            fullName: `${player.firstName.toLowerCase()} ${player.lastName.toLowerCase()}`
         })
     }
 
     let bestNames = []
+    let searchName = name.toLowerCase()
     const maxCount = 10
     for (let cachedPlayer of cachedPlayers) {
-        let cachedName = cachedPlayer.name
-        let similar = StringSimilarity.compareTwoStrings(name, cachedName)
-        if (similar > 0) {
+        let similar = StringSimilarity.compareTwoStrings(searchName, cachedPlayer.firstName)
+        similar = Math.max(similar, StringSimilarity.compareTwoStrings(searchName, cachedPlayer.lastName))
+        similar = Math.max(similar, StringSimilarity.compareTwoStrings(searchName, cachedPlayer.fullName))
+        if (similar > .4) {
             if (bestNames.length < maxCount || similar > bestNames[maxCount - 1].score) {
                 let index = bestNames.findIndex((data) => data.score < similar)
                 bestNames.splice(index >= 0 ? index : bestNames.length, 0, {

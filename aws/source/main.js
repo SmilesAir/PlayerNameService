@@ -18,6 +18,8 @@ module.exports.addPlayer = (e, c, cb) => { Common.handler(e, c, cb, async (event
     let membership = request.membership
     let country = request.country
     let gender = request.gender
+    let aliasKey = request.aliasKey
+    let fpaWebsiteId = request.fpaWebsiteId
 
     let newPlayerData = {
         key: uuid.v4(),
@@ -27,7 +29,9 @@ module.exports.addPlayer = (e, c, cb) => { Common.handler(e, c, cb, async (event
         lastActive: Date.now(),
         membership: membership || 0,
         country: country,
-        gender: gender
+        gender: gender,
+        aliasKey: aliasKey,
+        fpaWebsiteId: fpaWebsiteId
     }
 
     let putParams = {
@@ -223,6 +227,38 @@ module.exports.assignAlias = (e, c, cb) => { Common.handler(e, c, cb, async (eve
             throw error
         })
     }
+
+    await setIsPlayerDataDirty(true)
+
+    return {
+        success: true
+    }
+})}
+
+module.exports.assignFpaWebsiteId = (e, c, cb) => { Common.handler(e, c, cb, async (event, context) => {
+    let key = decodeURIComponent(event.pathParameters.key)
+    let fpaWebsiteId = parseInt(decodeURIComponent(event.pathParameters.fpaWebsiteId), 10)
+
+    if (key === undefined) {
+        throw "Error. Invalid key"
+    }
+
+    if (fpaWebsiteId === undefined) {
+        throw "Error. Invalid fpaWebsiteId"
+    }
+
+    let updateParams = {
+        TableName: process.env.PLAYER_TABLE,
+        Key: {"key": key},
+        UpdateExpression: "set fpaWebsiteId = :fpaWebsiteId",
+        ExpressionAttributeValues: {
+            ":fpaWebsiteId": fpaWebsiteId
+        },
+        ReturnValues: "NONE"
+    }
+    await docClient.update(updateParams).promise().catch((error) => {
+        throw error
+    })
 
     await setIsPlayerDataDirty(true)
 

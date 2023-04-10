@@ -79,6 +79,13 @@ functions:
           path: assignAlias/{aliasKey}
           method: post
           cors: true
+  assignFpaWebsiteId:
+    handler: source/main.assignFpaWebsiteId
+    events:
+      - http:
+          path: assignFpaWebsiteId/{key}/fpaWebsiteId/{fpaWebsiteId}
+          method: post
+          cors: true
 
 resources:
   Resources:
