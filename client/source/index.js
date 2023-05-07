@@ -367,9 +367,9 @@ function getSimilarPlayersByName(name) {
         let player = allData.playerData[playerKey]
         cachedPlayers.push({
             key: player.key,
-            firstName: player.firstName.toLowerCase(),
-            lastName: player.lastName.toLowerCase(),
-            fullName: `${player.firstName.toLowerCase()} ${player.lastName.toLowerCase()}`
+            firstName: (player.firstName || "").toLowerCase(),
+            lastName: (player.lastName || "").toLowerCase(),
+            fullName: `${(player.firstName || "").toLowerCase()} ${(player.lastName || "").toLowerCase()}`
         })
     }
 
