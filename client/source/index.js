@@ -249,6 +249,10 @@ function BulkField() {
     )
 }
 
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text)
+}
+
 function PlayerSearchOutput() {
     if (allData.searchKeys === undefined) {
         return null
@@ -259,7 +263,7 @@ function PlayerSearchOutput() {
         let player = allData.playerData[playerKey]
         rows.push(
             <tr key={player.key}>
-                <td>{player.key}</td>
+                <td><button onClick={() => copyToClipboard(player.key)}>{player.key}</button></td>
                 <td>{player.firstName}</td>
                 <td>{player.lastName}</td>
                 <td>{player.membership}</td>
@@ -529,7 +533,7 @@ function PlayerNamesApi() {
                 </h1>
                 <div className="formField">
                     <label>
-                        First Name: <SearchNameField />
+                        First or Last Name: <SearchNameField />
                     </label>
                 </div>
                 <button type="submit">
