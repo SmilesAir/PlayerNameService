@@ -25,6 +25,7 @@ The allPlayerData schema
 | membership | number | FPA Membership Number |
 | country | string | 3 letter country abbreviation |
 | gender | string | M, F, X |
+| aliasKey | string | GUID shared across all microservices |
 
 ### removePlayer
 POST. Removes a player  
