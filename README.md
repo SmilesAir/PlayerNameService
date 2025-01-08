@@ -51,3 +51,24 @@ Data is stored in DynamoDB and cached in S3. Aws Lambda handles all the requests
 There are 2 DynamoDB tables. An Info table that store whether the S3 cache needs to be updated and a Player table. The Player table has a row for each player. The Key is a GUID, and the data are all the properties for the player.
 
 When **getAllPlayers** is called, a scan of the Player table is done, then the results are cached in S3. If **removePlayer** or **modifyPlayer** is called, the cache is marked as dirty and the next **getAllPlayers** will scan the Player table and cache the results again.
+
+## Troubleshooting
+### Combining player entries.
+If a person has multiple entries, you can combine them using Assign Alias.
+![alt text](image-3.png)  
+1. Enter partial name to find entries
+2. Click Find Players to show all matching results
+3. Find Original Player in search results. This is the name that will show in the published rankings. Clicking the button will copy the Key to the clipboard
+4. Find the Alias Player in search results. This entry will be combined with the Original Player. Clicking the button will copy the Key to the clipboard
+5. Enter the Original Player Key. Click the button from step 3 with the Key and paste it into the textbox
+6. Enter the Alias Player Key. Click the button from step 4 with the Key and paste it into the textbox
+7. Click Assign Alias
+
+You can confirm by clicking Find Players again and seeing the Alias Key filled in. In Emilia's case, she has 3 entries, so 2 are marked as aliases
+![alt text](image.png)
+### Removing Alias
+If you need to remove an alias from an entry, assign a blank Original Key to an Alias
+![alt text](image-2.png)
+1. Find the Alias Player. This entry will become detached from the Original Player. Clicking the button will copy the Key to the clipboard
+2. Enter the Alias Key into the Alias Player Key textbox.
+3. Click Assign Alias
