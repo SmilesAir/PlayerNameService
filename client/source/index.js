@@ -402,6 +402,59 @@ function getSimilarPlayersByName(name) {
     return bestNames.map((data) => data.key)
 }
 
+function checkAliasErrors(alertOnSuccess, playerKeyToUpdate, newAliasKey) {
+    return getAllPlayers().then(() => {
+        if (playerKeyToUpdate !== undefined && newAliasKey !== undefined) {
+            allData.playerData[playerKeyToUpdate].aliasKey = newAliasKey
+        }
+
+        let loopErrors = findPlayerAliasLoops()
+        let isError = loopErrors.length > 0
+        let message = "No Errors"
+        if (isError) {
+            message = "Alias Loops Found:\n"
+            for (let loop of loopErrors) {
+                let line = ""
+                for (let player of loop) {
+                    line += player.key + ": " + player.firstName + " " + player.lastName + " -> "
+                }
+                message += line.slice(0, line.length - 4) + "\n\n"
+            }
+        }
+
+        if (isError || alertOnSuccess) {
+            alert(message)
+        }
+
+        return isError
+    }).catch((error) => {
+        console.error(error)
+    })
+
+    return false
+}
+
+function findPlayerAliasLoops() {
+    let loops = []
+    for (let playerKey in allData.playerData) {
+        let player = allData.playerData[playerKey]
+        let path = []
+        let history = {}
+        let current = player
+        while (current !== undefined && current.aliasKey !== undefined) {
+            if (history[current.key] !== undefined) {
+                loops.push(path)
+                break
+            }
+
+            path.push(current)
+            history[current.key] = 1
+            current = allData.playerData[current.aliasKey]
+        }
+    }
+    return loops
+}
+
 function PlayerNamesApi() {
     // Use the useForm hook to create a form instance
     const AddPlayerForm = useForm({
@@ -514,10 +567,19 @@ function PlayerNamesApi() {
 
     const AssignAliasForm = useForm({
         onSubmit: async(values, instance) => {
-            postData(`${awsPath}assignAlias/${values.aliasKey.trim()}`, {
-                originalKey: values.originalKey && values.originalKey.trim().length > 0 ? values.originalKey.trim() : undefined
-            }).then((response) => {
-                console.log(response)
+            let originalKey = values.originalKey && values.originalKey.trim().length > 0 ? values.originalKey.trim() : undefined
+            let aliasKey = values.aliasKey.trim()
+            checkAliasErrors(false, aliasKey, originalKey).then((isError) => {
+                if (!isError) {
+                    console.log("upload")
+                    postData(`${awsPath}assignAlias/${aliasKey}`, {
+                        originalKey: originalKey
+                    }).then((response) => {
+                        console.log(response)
+                    }).catch((error) => {
+                        console.error(error)
+                    })
+                }
             }).catch((error) => {
                 console.error(error)
             })
@@ -555,6 +617,13 @@ function PlayerNamesApi() {
                 </div>
                 <button type="submit">
                     Assign Alias
+                </button>
+                <button type="errorChecking" onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    checkAliasErrors(true)
+                }}>
+                    Check for Errors
                 </button>
             </AssignAliasForm.Form>
             <h1>

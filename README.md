@@ -72,3 +72,11 @@ If you need to remove an alias from an entry, assign a blank Original Key to an 
 1. Find the Alias Player. This entry will become detached from the Original Player. Clicking the button will copy the Key to the clipboard
 2. Enter the Alias Key into the Alias Player Key textbox.
 3. Click Assign Alias
+
+## Dealing with Alias Loops
+There cannot be a loop of alias. This will cause the Points tab to hang when generating points. Use the Check For Errors button to detect loops
+![alt text](image-5.png)
+
+### Loop Example
+The 2 Harald entries point to each other. This means the system doesn't know which one to use. There should be an entry that doesn't point to anything. The entry that doesn't have an alias is the one that shows in the rankings.
+![alt text](image-6.png)
