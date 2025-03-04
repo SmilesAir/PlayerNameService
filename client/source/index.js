@@ -429,9 +429,9 @@ function checkAliasErrors(alertOnSuccess, playerKeyToUpdate, newAliasKey) {
         return isError
     }).catch((error) => {
         console.error(error)
-    })
 
-    return false
+        return false
+    })
 }
 
 function findPlayerAliasLoops() {
