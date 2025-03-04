@@ -259,6 +259,22 @@ function PlayerSearchOutput() {
     }
 
     let rows = []
+    if (allData.searchKeys.length > 0) {
+        rows.push(
+            <tr key="header">
+                <td>Key - Click to Copy</td>
+                <td>First Name</td>
+                <td>Last Name</td>
+                <td>FPA #</td>
+                <td>Country</td>
+                <td>Gender</td>
+                <td>Created At</td>
+                <td>Last Active</td>
+                <td>FPA</td>
+                <td>Alias Key</td>
+            </tr>
+        )
+    }
     for (let playerKey of allData.searchKeys) {
         let player = allData.playerData[playerKey]
         rows.push(
@@ -590,6 +606,7 @@ function PlayerNamesApi() {
     return (
         <div>
             <FindPlayerForm.Form>
+                <a href="https://github.com/SmilesAir/PlayerNameService?tab=readme-ov-file#troubleshooting" target="_blank" rel="noopener noreferrer">Instructions/README</a>
                 <h1>
                     Find Player
                 </h1>
