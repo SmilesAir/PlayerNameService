@@ -258,6 +258,10 @@ function PlayerSearchOutput() {
         return null
     }
 
+    if (allData.searchKeys === "InProgress") {
+        return <h3>Searching...</h3>
+    }
+
     let rows = []
     if (allData.searchKeys.length > 0) {
         rows.push(
@@ -420,7 +424,7 @@ function getSimilarPlayersByName(name) {
 
 function checkAliasErrors(alertOnSuccess, playerKeyToUpdate, newAliasKey) {
     return getAllPlayers().then(() => {
-        if (playerKeyToUpdate !== undefined && newAliasKey !== undefined) {
+        if (playerKeyToUpdate !== undefined) {
             allData.playerData[playerKeyToUpdate].aliasKey = newAliasKey
         }
 
@@ -571,6 +575,7 @@ function PlayerNamesApi() {
 
     const FindPlayerForm = useForm({
         onSubmit: async(values, instance) => {
+            allData.searchKeys = "InProgress"
             getAllPlayers().then(() => {
                 allData.searchKeys = getSimilarPlayersByName(values.searchName)
                 render()
@@ -586,8 +591,7 @@ function PlayerNamesApi() {
             let originalKey = values.originalKey && values.originalKey.trim().length > 0 ? values.originalKey.trim() : undefined
             let aliasKey = values.aliasKey.trim()
             checkAliasErrors(false, aliasKey, originalKey).then((isError) => {
-                if (!isError) {
-                    console.log("upload")
+                if (!isError || originalKey === undefined) {
                     postData(`${awsPath}assignAlias/${aliasKey}`, {
                         originalKey: originalKey
                     }).then((response) => {
@@ -595,6 +599,8 @@ function PlayerNamesApi() {
                     }).catch((error) => {
                         console.error(error)
                     })
+
+                    getAllPlayers()
                 }
             }).catch((error) => {
                 console.error(error)
