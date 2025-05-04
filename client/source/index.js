@@ -9,16 +9,13 @@ const ReactDOM = require("react-dom")
 const Mobx = require("mobx")
 import { useForm, useField, splitFormProps } from "react-form"
 const StringSimilarity = require("string-similarity")
+const PlayerNameWidget = require("./playerNameWidget.js")
+const MainStore = require("./mainStore.js")
 
 require("./index.less")
 
 const awsPath = __STAGE__ === "DEVELOPMENT" ? "https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/" : "https://4wnda3jb78.execute-api.us-west-2.amazonaws.com/production/"
 const countryCodes = [ "AFG", "ALA", "ALB", "DZA", "ASM", "AND", "AGO", "AIA", "ATA", "ATG", "ARG", "ARM", "ABW", "AUS", "AUT", "AZE", "BHS", "BHR", "BGD", "BRB", "BLR", "BEL", "BLZ", "BEN", "BMU", "BTN", "BOL", "BES", "BIH", "BWA", "BVT", "BRA", "IOT", "BRN", "BGR", "BFA", "BDI", "KHM", "CMR", "CAN", "CPV", "CYM", "CAF", "TCD", "CHL", "CHN", "CXR", "CCK", "COL", "COM", "COG", "COD", "COK", "CRI", "CIV", "HRV", "CUB", "CUW", "CYP", "CZE", "DNK", "DJI", "DMA", "DOM", "ECU", "EGY", "SLV", "GNQ", "ERI", "EST", "ETH", "FLK", "FRO", "FJI", "FIN", "FRA", "GUF", "PYF", "ATF", "GAB", "GMB", "GEO", "DEU", "GHA", "GIB", "GRC", "GRL", "GRD", "GLP", "GUM", "GTM", "GGY", "GIN", "GNB", "GUY", "HTI", "HMD", "VAT", "HND", "HKG", "HUN", "ISL", "IND", "IDN", "IRN", "IRQ", "IRL", "IMN", "ISR", "ITA", "JAM", "JPN", "JEY", "JOR", "KAZ", "KEN", "KIR", "PRK", "KOR", "XKX", "KWT", "KGZ", "LAO", "LVA", "LBN", "LSO", "LBR", "LBY", "LIE", "LTU", "LUX", "MAC", "MKD", "MDG", "MWI", "MYS", "MDV", "MLI", "MLT", "MHL", "MTQ", "MRT", "MUS", "MYT", "MEX", "FSM", "MDA", "MCO", "MNG", "MNE", "MSR", "MAR", "MOZ", "MMR", "NAM", "NRU", "NPL", "NLD", "NCL", "NZL", "NIC", "NER", "NGA", "NIU", "NFK", "MNP", "NOR", "OMN", "PAK", "PLW", "PSE", "PAN", "PNG", "PRY", "PER", "PHL", "PCN", "POL", "PRT", "PRI", "QAT", "SRB", "REU", "ROU", "RUS", "RWA", "BLM", "SHN", "KNA", "LCA", "MAF", "SPM", "VCT", "WSM", "SMR", "STP", "SAU", "SEN", "SYC", "SLE", "SGP", "SXM", "SVK", "SVN", "SLB", "SOM", "ZAF", "SGS", "SSD", "ESP", "LKA", "SDN", "SUR", "SJM", "SWZ", "SWE", "CHE", "SYR", "TWN", "TJK", "TZA", "THA", "TLS", "TGO", "TKL", "TON", "TTO", "TUN", "TUR", "XTX", "TKM", "TCA", "TUV", "UGA", "UKR", "ARE", "GBR", "USA", "UMI", "URY", "UZB", "VUT", "VEN", "VNM", "VGB", "VIR", "WLF", "ESH", "YEM", "ZMB", "ZWE" ]
-let allData = Mobx.observable({
-    playerData: {},
-    showAllPlayers: false,
-    searchKeys: undefined
-})
 
 function validateKey(value) {
     if (!value) {
@@ -254,16 +251,16 @@ function copyToClipboard(text) {
 }
 
 function PlayerSearchOutput() {
-    if (allData.searchKeys === undefined) {
+    if (MainStore.searchKeys === undefined) {
         return null
     }
 
-    if (allData.searchKeys === "InProgress") {
+    if (MainStore.searchKeys === "InProgress") {
         return <h3>Searching...</h3>
     }
 
     let rows = []
-    if (allData.searchKeys.length > 0) {
+    if (MainStore.searchKeys.length > 0) {
         rows.push(
             <tr key="header">
                 <td>Key - Click to Copy</td>
@@ -279,8 +276,9 @@ function PlayerSearchOutput() {
             </tr>
         )
     }
-    for (let playerKey of allData.searchKeys) {
-        let player = allData.playerData[playerKey]
+    for (let playerKey of MainStore.searchKeys) {
+        let player = MainStore.playerData[playerKey]
+        console.log(player)
         rows.push(
             <tr key={player.key}>
                 <td><button onClick={() => copyToClipboard(player.key)}>{player.key}</button></td>
@@ -312,13 +310,13 @@ function PlayerSearchOutput() {
 }
 
 function PlayerOutput() {
-    if (allData.showAllPlayers !== true) {
+    if (MainStore.showAllPlayers !== true) {
         return null
     }
 
     let rows = []
-    for (let playerKey in allData.playerData) {
-        let player = allData.playerData[playerKey]
+    for (let playerKey in MainStore.playerData) {
+        let player = MainStore.playerData[playerKey]
         rows.push(
             <tr key={player.key}>
                 <td>{player.key}</td>
@@ -349,13 +347,13 @@ function PlayerOutput() {
 }
 
 function getAllPlayersAndShow() {
-    allData.showAllPlayers = true
+    MainStore.showAllPlayers = true
     getAllPlayers()
 }
 
 function getAllPlayers() {
     return getData(`${awsPath}getAllPlayers`).then((response) => {
-        allData.playerData = response.players
+        MainStore.playerData = response.players
 
         console.log(response)
 
@@ -375,7 +373,7 @@ function importFromAllData(e) {
         console.log(jsonData)
 
         postData(`${awsPath}importFromAllData`, {
-            allData: jsonData
+            MainStore: jsonData
         }).then((response) => {
             console.log(response)
             alert(`Imported ${response.importedPlayersCount} players`)
@@ -387,8 +385,8 @@ function importFromAllData(e) {
 
 function getSimilarPlayersByName(name) {
     let cachedPlayers = []
-    for (let playerKey in allData.playerData) {
-        let player = allData.playerData[playerKey]
+    for (let playerKey in MainStore.playerData) {
+        let player = MainStore.playerData[playerKey]
         cachedPlayers.push({
             key: player.key,
             firstName: (player.firstName || "").toLowerCase(),
@@ -425,7 +423,7 @@ function getSimilarPlayersByName(name) {
 function checkAliasErrors(alertOnSuccess, playerKeyToUpdate, newAliasKey) {
     return getAllPlayers().then(() => {
         if (playerKeyToUpdate !== undefined) {
-            allData.playerData[playerKeyToUpdate].aliasKey = newAliasKey
+            MainStore.playerData[playerKeyToUpdate].aliasKey = newAliasKey
         }
 
         let loopErrors = findPlayerAliasLoops()
@@ -456,8 +454,8 @@ function checkAliasErrors(alertOnSuccess, playerKeyToUpdate, newAliasKey) {
 
 function findPlayerAliasLoops() {
     let loops = []
-    for (let playerKey in allData.playerData) {
-        let player = allData.playerData[playerKey]
+    for (let playerKey in MainStore.playerData) {
+        let player = MainStore.playerData[playerKey]
         let path = []
         let history = {}
         let current = player
@@ -469,7 +467,7 @@ function findPlayerAliasLoops() {
 
             path.push(current)
             history[current.key] = 1
-            current = allData.playerData[current.aliasKey]
+            current = MainStore.playerData[current.aliasKey]
         }
     }
     return loops
@@ -575,9 +573,9 @@ function PlayerNamesApi() {
 
     const FindPlayerForm = useForm({
         onSubmit: async(values, instance) => {
-            allData.searchKeys = "InProgress"
+            MainStore.searchKeys = "InProgress"
             getAllPlayers().then(() => {
-                allData.searchKeys = getSimilarPlayersByName(values.searchName)
+                MainStore.searchKeys = getSimilarPlayersByName(values.searchName)
                 render()
             }).catch((error) => {
                 console.error(error)
@@ -611,6 +609,7 @@ function PlayerNamesApi() {
 
     return (
         <div>
+            <PlayerNameWidget />
             <FindPlayerForm.Form>
                 <a href="https://github.com/SmilesAir/PlayerNameService?tab=readme-ov-file#troubleshooting" target="_blank" rel="noopener noreferrer">Instructions/README</a>
                 <h1>

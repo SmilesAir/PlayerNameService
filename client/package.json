@@ -25,6 +25,7 @@
         "mobx-react": "^5.2.8",
         "react": "^16.5.2",
         "react-dom": "^16.5.2",
+        "react-dropdown": "^1.11.0",
         "react-form": "^4.0.1",
         "string-similarity": "^4.0.4"
     },
