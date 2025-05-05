@@ -1,6 +1,7 @@
 const React = require("react")
 const MobxReact = require("mobx-react")
 const Dropdown = require("react-dropdown").default
+const StringSimilarity = require("string-similarity")
 
 const MainStore = require("./mainStore.js")
 
@@ -22,9 +23,22 @@ function getData(url) {
     })
 }
 
+
+let cachedPlayers = []
+
 function getAllPlayers() {
     return getData(`${awsPath}getAllPlayers`).then((response) => {
         MainStore.playerData = response.players
+
+        for (let playerKey in MainStore.playerData) {
+            let player = MainStore.playerData[playerKey]
+            cachedPlayers.push({
+                key: player.key,
+                firstName: (player.firstName || "").toLowerCase(),
+                lastName: (player.lastName || "").toLowerCase(),
+                fullName: `${(player.firstName || "").toLowerCase()} ${(player.lastName || "").toLowerCase()}`
+            })
+        }
 
         console.log(response)
     }).catch((error) => {
@@ -42,6 +56,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             searchText: "",
             selectedResultIndex: undefined,
             selectedResultAliasIndex: undefined,
+            selectedPlayerAliasesIndex: undefined,
             selectedPlayerDataDirty: false,
             selectedPlayerFirstName: "",
             selectedPlayerLastName: "",
@@ -56,11 +71,60 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         }
     }
 
+    getSimilarPlayersByName(name) {
+        let bestNames = []
+        let searchName = name.toLowerCase()
+        const maxCount = 10
+        for (let cachedPlayer of cachedPlayers) {
+            let similar = StringSimilarity.compareTwoStrings(searchName, cachedPlayer.firstName)
+            similar = Math.max(similar, StringSimilarity.compareTwoStrings(searchName, cachedPlayer.lastName))
+            similar = Math.max(similar, StringSimilarity.compareTwoStrings(searchName, cachedPlayer.fullName))
+            if (similar > .4) {
+                if (bestNames.length < maxCount || similar > bestNames[maxCount - 1].score) {
+                    let index = bestNames.findIndex((data) => data.score < similar)
+                    bestNames.splice(index >= 0 ? index : bestNames.length, 0, {
+                        key: cachedPlayer.key,
+                        score: similar
+                    })
+
+                    if (bestNames.length > maxCount) {
+                        bestNames.pop()
+                    }
+                }
+            }
+        }
+
+        return bestNames.map((data) => MainStore.playerData[data.key])
+    }
+
+    findAliasesForPlayer(playerKey) {
+        if (playerKey === undefined || playerKey === "") {
+            return []
+        }
+
+        let aliases = Object.values(MainStore.playerData).filter((value) => {
+            if (value.aliasKey === playerKey) {
+                return true
+            }
+
+            return false
+        })
+        aliases = aliases.map((data) => data.key)
+
+        return aliases
+    }
+
     onSearchTextChange(e) {
+        this.state.searchResults = []
         this.state.searchText = e.target.value
         this.state.selectedResultIndex = undefined
+
+        if (e.target.value !== "") {
+            let playerDatas = this.getSimilarPlayersByName(this.state.searchText)
+            this.state.searchResults = this.state.searchResults.concat(playerDatas)
+        }
+
         this.setState(this.state)
-        console.log(this.state.searchText)
     }
 
     getSearchWidget() {
@@ -93,14 +157,41 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         )
     }
 
+    findOriginalPlayerDataFromAlias(aliasKey) {
+        let playerData = MainStore.playerData[aliasKey]
+        if (playerData === undefined) {
+            return undefined
+        }
+
+        for (let i = 0; i < 100; ++i) {
+            if (playerData.aliasKey === undefined || playerData.aliasKey.length === 0) {
+                return playerData
+            }
+        }
+
+        return undefined
+    }
+
     onPlayerSearchResultClick(index) {
+        this.state.selectedPlayerAliasesIndex = undefined
         this.state.selectedResultIndex = index
         let playerData = this.state.searchResults[index]
+        let selectedAliasKey = undefined
+        if (playerData.aliasKey !== undefined && playerData.aliasKey.length > 0) {
+            selectedAliasKey = playerData.key
+            playerData = this.findOriginalPlayerDataFromAlias(playerData.aliasKey)
+        }
         this.state.selectedPlayerFirstName = playerData.firstName || ""
         this.state.selectedPlayerLastName = playerData.lastName || ""
         this.state.selectedPlayerFpaNumber = playerData.membership || 0
         this.state.selectedPlayerCountry = playerData.country || ""
         this.state.selectedPlayerGender = playerData.gender || ""
+
+        this.state.selectedPlayerAliases = this.findAliasesForPlayer(playerData.key)
+        if (selectedAliasKey !== undefined) {
+            this.state.selectedPlayerAliasesIndex = this.state.selectedPlayerAliases.findIndex((key) => key === selectedAliasKey)
+            console.log(this.state.selectedPlayerAliasesIndex, selectedAliasKey, this.state.selectedPlayerAliases)
+        }
         this.setState(this.state)
     }
 
@@ -110,14 +201,15 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             if (index === this.state.selectedResultIndex) {
                 className += " selected"
             }
+            let aliasTag = data.aliasKey !== undefined ? " (Alias)" : ""
             return (
                 <div key={data.key} className={className} onClick={() => this.onPlayerSearchResultClick(index)}>
-                    {`${data.firstName} ${data.lastName}`}
+                    {`${data.firstName} ${data.lastName}${aliasTag}`}
                 </div>
             )
         })
         if (results.length === 0) {
-            if (this.state.searchText.length === 0) {
+            if (this.state.searchText.length < 2) {
                 results.push(<div>Search above for Players by Name</div>)
             } else {
                 results.push(<div>No Players Found</div>)
@@ -137,7 +229,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
 
     getSelectedResultWidget() {
         let details = []
-        if (this.state.searchResults.length > 0) {
+        if (this.state.selectedResultIndex === undefined && this.state.searchResults.length > 0) {
             details.push(<div key="search">Select Name in Search Results</div>)
         } else if (this.state.selectedResultIndex !== undefined) {
             details.push(
@@ -224,8 +316,9 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
                 } else {
                     aliases = this.state.selectedPlayerAliases.map((data, index) => {
                         let playerData = MainStore.playerData[data]
+                        let className = `alias ${this.state.selectedPlayerAliasesIndex !== undefined && this.state.selectedPlayerAliasesIndex === index ? "selected" : ""}`
                         return (
-                            <div key={data} className="alias">
+                            <div key={data} className={className}>
                                 <div>{`${playerData.firstName} ${playerData.lastName}`}</div>
                                 <button onClick={() => this.onRemoveAlias(index)}>X</button>
                             </div>
