@@ -23,6 +23,18 @@ function getData(url) {
     })
 }
 
+function postData(url, data) {
+    return fetch(url, {
+        method: "POST",
+        mode: "cors",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    }).then((response) => {
+        return response.json()
+    })
+}
 
 let cachedPlayers = []
 
@@ -58,6 +70,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             selectedResultAliasIndex: undefined,
             selectedPlayerAliasesIndex: undefined,
             selectedPlayerDataDirty: false,
+            selectedPlayerKey: undefined,
             selectedPlayerFirstName: "",
             selectedPlayerLastName: "",
             selectedPlayerFpaNumber: 0,
@@ -181,6 +194,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             selectedAliasKey = playerData.key
             playerData = this.findOriginalPlayerDataFromAlias(playerData.aliasKey)
         }
+        this.state.selectedPlayerKey = playerData.key
         this.state.selectedPlayerFirstName = playerData.firstName || ""
         this.state.selectedPlayerLastName = playerData.lastName || ""
         this.state.selectedPlayerFpaNumber = playerData.membership || 0
@@ -190,7 +204,6 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         this.state.selectedPlayerAliases = this.findAliasesForPlayer(playerData.key)
         if (selectedAliasKey !== undefined) {
             this.state.selectedPlayerAliasesIndex = this.state.selectedPlayerAliases.findIndex((key) => key === selectedAliasKey)
-            console.log(this.state.selectedPlayerAliasesIndex, selectedAliasKey, this.state.selectedPlayerAliases)
         }
         this.setState(this.state)
     }
@@ -225,6 +238,16 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
 
     onDetailsUpdate() {
         console.log("update")
+
+        postData(`${awsPath}modifyPlayer/${this.state.selectedPlayerKey.trim()}/firstName/${this.state.selectedPlayerFirstName}/lastName/${this.state.selectedPlayerLastName}`, {
+            membership: this.state.selectedPlayerFpaNumber,
+            country: this.state.selectedPlayerCountry,
+            gender: this.state.selectedPlayerGender
+        }).then((response) => {
+            console.log(response)
+        }).catch((error) => {
+            console.error(error)
+        })
     }
 
     getSelectedResultWidget() {
@@ -232,6 +255,9 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         if (this.state.selectedResultIndex === undefined && this.state.searchResults.length > 0) {
             details.push(<div key="search">Select Name in Search Results</div>)
         } else if (this.state.selectedResultIndex !== undefined) {
+            if (this.state.selectedPlayerAliasesIndex !== undefined) {
+                details.push(<div key="original" className="originalNotice">Displaying Details for Primary Player</div>)
+            }
             details.push(
                 <div key="firstName" className="detail">
                     <label>First Name:</label>
