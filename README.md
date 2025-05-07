@@ -45,6 +45,15 @@ body: Optional. JSON string containing optional fields:
 | country | string | 3 letter country abbreviation |
 | gender | string | M, F, X |
 
+### assignAlias
+POST. Modify or remove alias from player
+URL: https://4wnda3jb78.execute-api.us-west-2.amazonaws.com/production/assignAlias/{aliasKey}
+aliasKey: The GUID of the player data to modify. eg the player data that should point to the original player data.
+body:
+| Property    | Type | Description |
+| --- | --- | --- |
+| originalKey | string | GUID of the original player data the alias should point to. Leave undefined to remove the alias field from the player data specified by aliasKey |
+
 ## Implementation
 Data is stored in DynamoDB and cached in S3. Aws Lambda handles all the requests, queries the data, and return the result.
 
