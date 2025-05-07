@@ -46,9 +46,9 @@ body: Optional. JSON string containing optional fields:
 | gender | string | M, F, X |
 
 ### assignAlias
-POST. Modify or remove alias from player
-URL: https://4wnda3jb78.execute-api.us-west-2.amazonaws.com/production/assignAlias/{aliasKey}
-aliasKey: The GUID of the player data to modify. eg the player data that should point to the original player data.
+POST. Modify or remove alias from player  
+URL: https://4wnda3jb78.execute-api.us-west-2.amazonaws.com/production/assignAlias/{aliasKey}  
+aliasKey: The GUID of the player data to modify. eg the player data that should point to the original player data.  
 body:
 | Property    | Type | Description |
 | --- | --- | --- |
