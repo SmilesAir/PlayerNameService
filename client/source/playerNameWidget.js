@@ -10,6 +10,11 @@ require("./playerNameWidget.less")
 
 const awsPath = __STAGE__ === "DEVELOPMENT" ? "https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/" : "https://4wnda3jb78.execute-api.us-west-2.amazonaws.com/production/"
 const countryCodes = [ "AFG", "ALA", "ALB", "DZA", "ASM", "AND", "AGO", "AIA", "ATA", "ATG", "ARG", "ARM", "ABW", "AUS", "AUT", "AZE", "BHS", "BHR", "BGD", "BRB", "BLR", "BEL", "BLZ", "BEN", "BMU", "BTN", "BOL", "BES", "BIH", "BWA", "BVT", "BRA", "IOT", "BRN", "BGR", "BFA", "BDI", "KHM", "CMR", "CAN", "CPV", "CYM", "CAF", "TCD", "CHL", "CHN", "CXR", "CCK", "COL", "COM", "COG", "COD", "COK", "CRI", "CIV", "HRV", "CUB", "CUW", "CYP", "CZE", "DNK", "DJI", "DMA", "DOM", "ECU", "EGY", "SLV", "GNQ", "ERI", "EST", "ETH", "FLK", "FRO", "FJI", "FIN", "FRA", "GUF", "PYF", "ATF", "GAB", "GMB", "GEO", "DEU", "GHA", "GIB", "GRC", "GRL", "GRD", "GLP", "GUM", "GTM", "GGY", "GIN", "GNB", "GUY", "HTI", "HMD", "VAT", "HND", "HKG", "HUN", "ISL", "IND", "IDN", "IRN", "IRQ", "IRL", "IMN", "ISR", "ITA", "JAM", "JPN", "JEY", "JOR", "KAZ", "KEN", "KIR", "PRK", "KOR", "XKX", "KWT", "KGZ", "LAO", "LVA", "LBN", "LSO", "LBR", "LBY", "LIE", "LTU", "LUX", "MAC", "MKD", "MDG", "MWI", "MYS", "MDV", "MLI", "MLT", "MHL", "MTQ", "MRT", "MUS", "MYT", "MEX", "FSM", "MDA", "MCO", "MNG", "MNE", "MSR", "MAR", "MOZ", "MMR", "NAM", "NRU", "NPL", "NLD", "NCL", "NZL", "NIC", "NER", "NGA", "NIU", "NFK", "MNP", "NOR", "OMN", "PAK", "PLW", "PSE", "PAN", "PNG", "PRY", "PER", "PHL", "PCN", "POL", "PRT", "PRI", "QAT", "SRB", "REU", "ROU", "RUS", "RWA", "BLM", "SHN", "KNA", "LCA", "MAF", "SPM", "VCT", "WSM", "SMR", "STP", "SAU", "SEN", "SYC", "SLE", "SGP", "SXM", "SVK", "SVN", "SLB", "SOM", "ZAF", "SGS", "SSD", "ESP", "LKA", "SDN", "SUR", "SJM", "SWZ", "SWE", "CHE", "SYR", "TWN", "TJK", "TZA", "THA", "TLS", "TGO", "TKL", "TON", "TTO", "TUN", "TUR", "XTX", "TKM", "TCA", "TUV", "UGA", "UKR", "ARE", "GBR", "USA", "UMI", "URY", "UZB", "VUT", "VEN", "VNM", "VGB", "VIR", "WLF", "ESH", "YEM", "ZMB", "ZWE" ]
+const updateButtonStates = Object.freeze({
+    Normal:   Symbol("normal"),
+    Updating:  Symbol("Updating"),
+    Success: Symbol("Success")
+})
 
 function getData(url) {
     return fetch(url, {
@@ -80,7 +85,8 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             selectedPlayerAliases: [],
             isSelectingAlias: false,
             aliasSearchText: "",
-            aliasSearchResults: []
+            aliasSearchResults: [],
+            updateButtonState: updateButtonStates.Normal
         }
     }
 
@@ -150,9 +156,15 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
     }
 
     onAliasSearchTextChange(e) {
+        this.state.aliasSearchResults = []
         this.state.aliasSearchText = e.target.value
+
+        if (e.target.value !== "") {
+            let playerDatas = this.getSimilarPlayersByName(this.state.aliasSearchText)
+            this.state.aliasSearchResults = this.state.aliasSearchResults.concat(playerDatas)
+        }
+
         this.setState(this.state)
-        console.log(this.state.aliasSearchText)
     }
 
     getAliasSearchWidget() {
@@ -223,9 +235,9 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         })
         if (results.length === 0) {
             if (this.state.searchText.length < 2) {
-                results.push(<div>Search above for Players by Name</div>)
+                results.push(<div key="search">Search above for Players by Name</div>)
             } else {
-                results.push(<div>No Players Found</div>)
+                results.push(<div key="no">No Players Found</div>)
             }
         }
         return (
@@ -237,7 +249,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
     }
 
     onDetailsUpdate() {
-        console.log("update")
+        this.setState({ updateButtonState: updateButtonStates.Updating })
 
         postData(`${awsPath}modifyPlayer/${this.state.selectedPlayerKey.trim()}/firstName/${this.state.selectedPlayerFirstName}/lastName/${this.state.selectedPlayerLastName}`, {
             membership: this.state.selectedPlayerFpaNumber,
@@ -245,6 +257,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             gender: this.state.selectedPlayerGender
         }).then((response) => {
             console.log(response)
+            this.setState({ updateButtonState: updateButtonStates.Success })
         }).catch((error) => {
             console.error(error)
         })
@@ -264,6 +277,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
                     <input type="text" value={this.state.selectedPlayerFirstName} onChange={(e) => {
                         this.state.selectedPlayerDataDirty = true
                         this.state.selectedPlayerFirstName = e.target.value
+                        this.state.updateButtonState = updateButtonStates.Normal
                         this.setState(this.state)
                     }}/>
                 </div>
@@ -284,6 +298,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
                     <input type="text" value={this.state.selectedPlayerFpaNumber} onChange={(e) => {
                         this.state.selectedPlayerDataDirty = true
                         this.state.selectedPlayerFpaNumber = parseInt(e.target.value, 10)
+                        this.state.updateButtonState = updateButtonStates.Normal
                         this.setState(this.state)
                     }}/>
                 </div>
@@ -294,6 +309,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
                     <Dropdown options={countryCodes} value={this.state.selectedPlayerCountry} placeholder="Select Country" onChange={(e) => {
                         this.state.selectedPlayerDataDirty = true
                         this.state.selectedPlayerCountry = e.value
+                        this.state.updateButtonState = updateButtonStates.Normal
                         this.setState(this.state)
                     }}/>
                 </div>
@@ -304,12 +320,22 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
                     <Dropdown options={[ "M", "F", "X" ]} value={this.state.selectedPlayerGender} placeholder="Select Gender" onChange={(e) => {
                         this.state.selectedPlayerDataDirty = true
                         this.state.selectedPlayerGender = e.value
+                        this.state.updateButtonState = updateButtonStates.Normal
                         this.setState(this.state)
                     }}/>
                 </div>
             )
 
-            details.push(<button key="update" disabled={!this.state.selectedPlayerDataDirty} onClick={() => this.onDetailsUpdate()}>Update</button>)
+            let updateButtonText = "Update"
+            switch (this.state.updateButtonState) {
+            case updateButtonStates.Updating:
+                updateButtonText = "Updating..."
+                break
+            case updateButtonStates.Success:
+                updateButtonText = "Update Successful"
+                break
+            }
+            details.push(<button key="update" disabled={!this.state.selectedPlayerDataDirty || this.state.updateButtonState !== updateButtonStates.Normal} onClick={() => this.onDetailsUpdate()}>{updateButtonText}</button>)
         }
 
         return (
@@ -321,6 +347,14 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
     }
 
     onRemoveAlias(index) {
+        postData(`${awsPath}assignAlias/${this.state.selectedPlayerAliases[index]}`, {
+            originalKey: undefined // https://github.com/SmilesAir/PlayerNameService?tab=readme-ov-file#assignalias
+        }).then((response) => {
+            console.log(response)
+        }).catch((error) => {
+            console.error(error)
+        })
+
         this.state.selectedPlayerAliases.splice(index, 1)
         this.setState(this.state)
         console.log(index)
@@ -342,11 +376,13 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
                 } else {
                     aliases = this.state.selectedPlayerAliases.map((data, index) => {
                         let playerData = MainStore.playerData[data]
-                        let className = `alias ${this.state.selectedPlayerAliasesIndex !== undefined && this.state.selectedPlayerAliasesIndex === index ? "selected" : ""}`
+                        let className = `alias ${!this.state.isSelectingAlias &&
+                            this.state.selectedPlayerAliasesIndex !== undefined &&
+                            this.state.selectedPlayerAliasesIndex === index ? "selected" : ""}`
                         return (
                             <div key={data} className={className}>
                                 <div>{`${playerData.firstName} ${playerData.lastName}`}</div>
-                                <button onClick={() => this.onRemoveAlias(index)}>X</button>
+                                <button onClick={() => this.onRemoveAlias(index, data)}>X</button>
                             </div>
                         )
                     })
@@ -376,17 +412,30 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         )
     }
 
+    onSetAlias(aliasKey) {
+        postData(`${awsPath}assignAlias/${aliasKey}`, {
+            originalKey: this.state.selectedPlayerKey
+        }).then((response) => {
+            console.log(response)
+        }).catch((error) => {
+            console.error(error)
+        })
+
+        this.state.selectedPlayerAliases.push(aliasKey)
+        this.setState(this.state)
+    }
+
     getAliasResultsWidget() {
         if (Object.keys(MainStore.playerData).length === 0) {
             return null
         }
 
         let results = this.state.aliasSearchResults.map((data) => {
-            let playerData = MainStore.playerData[data]
+            let playerData = MainStore.playerData[data.key]
             return (
-                <div key={data} className="playerSearchResult">
+                <div key={data.key} className="playerSearchResult">
                     {`${playerData.firstName} ${playerData.lastName}`}
-                    <button className="setAliasButton">Set Alias</button>
+                    <button className="setAliasButton" onClick={() => this.onSetAlias(data.key)}>Set Alias</button>
                 </div>
             )
         })
