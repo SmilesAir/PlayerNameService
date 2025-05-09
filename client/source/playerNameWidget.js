@@ -43,31 +43,9 @@ function postData(url, data) {
 
 let cachedPlayers = []
 
-function getAllPlayers() {
-    return getData(`${awsPath}getAllPlayers`).then((response) => {
-        MainStore.playerData = response.players
-
-        for (let playerKey in MainStore.playerData) {
-            let player = MainStore.playerData[playerKey]
-            cachedPlayers.push({
-                key: player.key,
-                firstName: (player.firstName || "").toLowerCase(),
-                lastName: (player.lastName || "").toLowerCase(),
-                fullName: `${(player.firstName || "").toLowerCase()} ${(player.lastName || "").toLowerCase()}`
-            })
-        }
-
-        console.log(response)
-    }).catch((error) => {
-        console.error(error)
-    })
-}
-
 module.exports = @MobxReact.observer class PlayerNameWidget extends React.Component {
     constructor(props) {
         super(props)
-
-        getAllPlayers()
 
         this.state = {
             searchText: "",
@@ -86,8 +64,37 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             isSelectingAlias: false,
             aliasSearchText: "",
             aliasSearchResults: [],
-            updateButtonState: updateButtonStates.Normal
+            updateButtonState: updateButtonStates.Normal,
+            fetchingPlayerData: false
         }
+
+        setTimeout(() => {
+            this.getAllPlayers()
+        }, 1)
+    }
+
+    getAllPlayers() {
+        this.setState({ fetchingPlayerData: true })
+
+        return getData(`${awsPath}getAllPlayers`).then((response) => {
+            MainStore.playerData = response.players
+
+            for (let playerKey in MainStore.playerData) {
+                let player = MainStore.playerData[playerKey]
+                cachedPlayers.push({
+                    key: player.key,
+                    firstName: (player.firstName || "").toLowerCase(),
+                    lastName: (player.lastName || "").toLowerCase(),
+                    fullName: `${(player.firstName || "").toLowerCase()} ${(player.lastName || "").toLowerCase()}`
+                })
+            }
+
+            this.setState({ fetchingPlayerData: false })
+
+            console.log(response)
+        }).catch((error) => {
+            console.error(error)
+        })
     }
 
     getSimilarPlayersByName(name) {
@@ -121,8 +128,9 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             return []
         }
 
-        let aliases = Object.values(MainStore.playerData).filter((value) => {
-            if (value.aliasKey === playerKey) {
+        let aliases = Object.values(MainStore.playerData).filter((playerData) => {
+            let originalPlayerData = this.findOriginalPlayerDataFromAlias(playerData.aliasKey)
+            if (originalPlayerData !== undefined && originalPlayerData.key === playerKey) {
                 return true
             }
 
@@ -192,6 +200,8 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             if (playerData.aliasKey === undefined || playerData.aliasKey.length === 0) {
                 return playerData
             }
+
+            playerData = MainStore.playerData[playerData.aliasKey]
         }
 
         return undefined
@@ -346,18 +356,38 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         )
     }
 
-    onRemoveAlias(index) {
-        postData(`${awsPath}assignAlias/${this.state.selectedPlayerAliases[index]}`, {
-            originalKey: undefined // https://github.com/SmilesAir/PlayerNameService?tab=readme-ov-file#assignalias
+    sendAssignAliasRequest(aliasKey, originalKey) {
+        postData(`${awsPath}assignAlias/${aliasKey}`, {
+            originalKey: originalKey
         }).then((response) => {
             console.log(response)
         }).catch((error) => {
             console.error(error)
         })
+    }
+
+    onRemoveAlias(index) {
+        let aliasKey = this.state.selectedPlayerAliases[index]
+        let aliasPlayerData = MainStore.playerData[aliasKey]
+
+        if (aliasPlayerData !== undefined && aliasPlayerData.aliasKey !== undefined && aliasPlayerData.aliasKey.length > 0) {
+            // Need to update all aliases that are pointing to this alias. If this was a middle link in an alias chain
+            let originalPlayerData = this.findOriginalPlayerDataFromAlias(aliasKey)
+            if (originalPlayerData !== undefined) {
+                for (let playerData of Object.values(MainStore.playerData)) {
+                    if (playerData.aliasKey === aliasKey) {
+                        console.log(aliasKey, originalPlayerData)
+                        this.sendAssignAliasRequest(playerData.key, originalPlayerData.key)
+                    }
+                }
+            }
+        }
+
+        // Remove alias
+        this.sendAssignAliasRequest(aliasKey) // https://github.com/SmilesAir/PlayerNameService?tab=readme-ov-file#assignalias
 
         this.state.selectedPlayerAliases.splice(index, 1)
         this.setState(this.state)
-        console.log(index)
     }
 
     onAddAliasClick() {
@@ -413,16 +443,57 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
     }
 
     onSetAlias(aliasKey) {
-        postData(`${awsPath}assignAlias/${aliasKey}`, {
-            originalKey: this.state.selectedPlayerKey
-        }).then((response) => {
-            console.log(response)
-        }).catch((error) => {
-            console.error(error)
-        })
+        let originalPlayerData = this.findOriginalPlayerDataFromAlias(this.state.selectedPlayerKey)
+        if (originalPlayerData !== undefined) {
+            this.sendAssignAliasRequest(aliasKey, originalPlayerData.key)
+        }
 
         this.state.selectedPlayerAliases.push(aliasKey)
         this.setState(this.state)
+    }
+
+    findPlayerAliasLoops(allPlayerData) {
+        let loops = []
+        for (let playerKey in allPlayerData) {
+            let player = allPlayerData[playerKey]
+            let path = []
+            let history = {}
+            let current = player
+            while (current !== undefined && current.aliasKey !== undefined) {
+                if (history[current.key] !== undefined) {
+                    loops.push(path)
+                    break
+                }
+
+                path.push(current)
+                history[current.key] = 1
+                current = allPlayerData[current.aliasKey]
+            }
+        }
+        return loops
+    }
+
+    willCreateLoop(aliasKey, originalKey) {
+        let aliasPlayerData = MainStore.playerData[aliasKey]
+        let originalPlayerData = MainStore.playerData[originalKey]
+        if (aliasPlayerData === undefined || originalPlayerData === undefined) {
+            return false
+        }
+
+        let allPlayerData = JSON.parse(JSON.stringify(MainStore.playerData))
+        allPlayerData[aliasKey].aliasKey = originalKey
+
+        if (this.findPlayerAliasLoops(allPlayerData).length > 0) {
+            return true
+        }
+
+        for (let selectedPlayerAliasKey of this.state.selectedPlayerAliases) {
+            if (selectedPlayerAliasKey === aliasKey) {
+                return true
+            }
+        }
+
+        return false
     }
 
     getAliasResultsWidget() {
@@ -435,7 +506,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             return (
                 <div key={data.key} className="playerSearchResult">
                     {`${playerData.firstName} ${playerData.lastName}`}
-                    <button className="setAliasButton" onClick={() => this.onSetAlias(data.key)}>Set Alias</button>
+                    <button className="setAliasButton" disabled={this.willCreateLoop(data.key, this.state.selectedPlayerKey)} onClick={() => this.onSetAlias(data.key)}>Set Alias</button>
                 </div>
             )
         })
@@ -459,6 +530,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         return (
             <div className="playerNameWidget">
                 <div className="title">Player Data Tool</div>
+                <div className={`loading ${this.state.fetchingPlayerData ? "" : "hidden"}`}>Getting Data from Internet</div>
                 {this.state.isSelectingAlias ? this.getAliasSearchWidget() : this.getSearchWidget()}
                 {this.state.isSelectingAlias ? this.getAliasResultsWidget() : this.getResultsWidget()}
                 {this.state.isSelectingAlias ? <button className="finishAliasButton" onClick={() => this.onFinishAliasEditing()}>Finshed Alias Editing</button> : null}
