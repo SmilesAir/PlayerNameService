@@ -78,6 +78,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
 
         return getData(`${awsPath}getAllPlayers`).then((response) => {
             MainStore.playerData = response.players
+            cachedPlayers = []
 
             for (let playerKey in MainStore.playerData) {
                 let player = MainStore.playerData[playerKey]
@@ -90,6 +91,8 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             }
 
             this.setState({ fetchingPlayerData: false })
+
+            this.fillSearchResults()
 
             console.log(response)
         }).catch((error) => {
@@ -147,11 +150,19 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         this.state.selectedResultIndex = undefined
 
         if (e.target.value !== "") {
-            let playerDatas = this.getSimilarPlayersByName(this.state.searchText)
-            this.state.searchResults = this.state.searchResults.concat(playerDatas)
+            this.fillSearchResults()
         }
 
         this.setState(this.state)
+    }
+
+    fillSearchResults() {
+        this.state.searchResults = []
+        if (this.state.searchText !== undefined && this.state.searchText.length > 0) {
+            this.state.searchResults = this.getSimilarPlayersByName(this.state.searchText)
+
+            this.setState(this.state)
+        }
     }
 
     getSearchWidget() {
@@ -268,6 +279,8 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         }).then((response) => {
             console.log(response)
             this.setState({ updateButtonState: updateButtonStates.Success })
+
+            this.getAllPlayers()
         }).catch((error) => {
             console.error(error)
         })
@@ -360,6 +373,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         postData(`${awsPath}assignAlias/${aliasKey}`, {
             originalKey: originalKey
         }).then((response) => {
+            this.getAllPlayers()
             console.log(response)
         }).catch((error) => {
             console.error(error)
@@ -530,7 +544,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         return (
             <div className="playerNameWidget">
                 <div className="title">Player Data Tool</div>
-                <div className={`loading ${this.state.fetchingPlayerData ? "" : "hidden"}`}>Getting Data from Internet</div>
+                <div className={`loading ${this.state.fetchingPlayerData ? "" : "hidden"}`}>Getting Data from Internet...</div>
                 {this.state.isSelectingAlias ? this.getAliasSearchWidget() : this.getSearchWidget()}
                 {this.state.isSelectingAlias ? this.getAliasResultsWidget() : this.getResultsWidget()}
                 {this.state.isSelectingAlias ? <button className="finishAliasButton" onClick={() => this.onFinishAliasEditing()}>Finshed Alias Editing</button> : null}

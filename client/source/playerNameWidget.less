@@ -1,10 +1,25 @@
 
 .playerNameWidget {
+    position: relative;
     border: lightblue solid 1px;
     border-radius: 2px;
 
     .loading {
-        background-color: aqua;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        font-size: 2em;
+        color: lightcoral;
+        position: absolute;
+        left: 2%;
+        top: 5%;
+        width: 96%;
+        height: 85%;
+        background-color: white;
+        border: lightcoral solid 5px;
+        border-radius: 10px;
+        z-index: 1000;
     }
 
     .hidden {
