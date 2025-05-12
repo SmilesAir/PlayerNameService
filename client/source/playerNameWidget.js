@@ -65,7 +65,8 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             aliasSearchText: "",
             aliasSearchResults: [],
             updateButtonState: updateButtonStates.Normal,
-            fetchingPlayerData: false
+            fetchingPlayerData: false,
+            isNewPlayerSelected: false
         }
 
         setTimeout(() => {
@@ -148,6 +149,8 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         this.state.searchResults = []
         this.state.searchText = e.target.value
         this.state.selectedResultIndex = undefined
+        this.state.isNewPlayerSelected = false
+        this.state.updateButtonState = updateButtonStates.Normal
 
         if (e.target.value !== "") {
             this.fillSearchResults()
@@ -219,8 +222,11 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
     }
 
     onPlayerSearchResultClick(index) {
+        this.state.isNewPlayerSelected = false
         this.state.selectedPlayerAliasesIndex = undefined
+        this.state.updateButtonState = updateButtonStates.Normal
         this.state.selectedResultIndex = index
+
         let playerData = this.state.searchResults[index]
         let selectedAliasKey = undefined
         if (playerData.aliasKey !== undefined && playerData.aliasKey.length > 0) {
@@ -238,6 +244,21 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         if (selectedAliasKey !== undefined) {
             this.state.selectedPlayerAliasesIndex = this.state.selectedPlayerAliases.findIndex((key) => key === selectedAliasKey)
         }
+        this.setState(this.state)
+    }
+
+    onNewPlayerClick() {
+        this.state.isNewPlayerSelected = true
+        this.state.selectedPlayerAliasesIndex = undefined
+        this.state.selectedResultIndex = -1
+
+        this.state.selectedPlayerKey = undefined
+        this.state.selectedPlayerFirstName = ""
+        this.state.selectedPlayerLastName = ""
+        this.state.selectedPlayerFpaNumber = 0
+        this.state.selectedPlayerCountry = ""
+        this.state.selectedPlayerGender = ""
+
         this.setState(this.state)
     }
 
@@ -261,6 +282,10 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
                 results.push(<div key="no">No Players Found</div>)
             }
         }
+        let newPlayerClassname = `playerSearchResult newPlayer ${this.state.isNewPlayerSelected ? "selected" : ""}`
+        results.push(
+            <div key="add" className={newPlayerClassname} onClick={() => this.onNewPlayerClick()}>Add New Player</div>
+        )
         return (
             <div className="searchResults">
                 <div className="headerText">Search Results</div>
@@ -272,18 +297,28 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
     onDetailsUpdate() {
         this.setState({ updateButtonState: updateButtonStates.Updating })
 
-        postData(`${awsPath}modifyPlayer/${this.state.selectedPlayerKey.trim()}/firstName/${this.state.selectedPlayerFirstName}/lastName/${this.state.selectedPlayerLastName}`, {
-            membership: this.state.selectedPlayerFpaNumber,
-            country: this.state.selectedPlayerCountry,
-            gender: this.state.selectedPlayerGender
-        }).then((response) => {
-            console.log(response)
-            this.setState({ updateButtonState: updateButtonStates.Success })
+        if (this.state.selectedPlayerKey !== undefined) {
+            postData(`${awsPath}modifyPlayer/${this.state.selectedPlayerKey.trim()}/firstName/${this.state.selectedPlayerFirstName}/lastName/${this.state.selectedPlayerLastName}`, {
+                membership: this.state.selectedPlayerFpaNumber,
+                country: this.state.selectedPlayerCountry,
+                gender: this.state.selectedPlayerGender
+            }).then((response) => {
+                console.log(response)
+                this.setState({ updateButtonState: updateButtonStates.UpdateSuccess })
 
-            this.getAllPlayers()
-        }).catch((error) => {
-            console.error(error)
-        })
+                this.getAllPlayers()
+            }).catch((error) => {
+                console.error(error)
+            })
+        }
+    }
+
+    onPlayerDetailsSubmit() {
+        if (this.state.isNewPlayerSelected) {
+            this.addPlayer()
+        } else {
+            this.onDetailsUpdate()
+        }
     }
 
     getSelectedResultWidget() {
@@ -349,16 +384,30 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
                 </div>
             )
 
-            let updateButtonText = "Update"
-            switch (this.state.updateButtonState) {
-            case updateButtonStates.Updating:
-                updateButtonText = "Updating..."
-                break
-            case updateButtonStates.Success:
-                updateButtonText = "Update Successful"
-                break
+            let updateButtonText = ""
+            if (this.state.isNewPlayerSelected) {
+                updateButtonText = "Create"
+                switch (this.state.updateButtonState) {
+                case updateButtonStates.Creating:
+                    updateButtonText = "Creating..."
+                    break
+                case updateButtonStates.CreateSuccess:
+                    updateButtonText = "Create Successful"
+                    break
+                }
+            } else {
+                updateButtonText = "Update"
+                switch (this.state.updateButtonState) {
+                case updateButtonStates.Updating:
+                    updateButtonText = "Updating..."
+                    break
+                case updateButtonStates.UpdateSuccess:
+                    updateButtonText = "Update Successful"
+                    break
+                }
             }
-            details.push(<button key="update" disabled={!this.state.selectedPlayerDataDirty || this.state.updateButtonState !== updateButtonStates.Normal} onClick={() => this.onDetailsUpdate()}>{updateButtonText}</button>)
+            details.push(<button key="update" disabled={!this.state.selectedPlayerDataDirty || this.state.updateButtonState !== updateButtonStates.Normal}
+                onClick={() => this.onPlayerDetailsSubmit()}>{updateButtonText}</button>)
         }
 
         return (
@@ -538,6 +587,23 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
     onFinishAliasEditing() {
         this.state.isSelectingAlias = false
         this.setState(this.state)
+    }
+
+    addPlayer() {
+        this.setState({ updateButtonState: updateButtonStates.Creating })
+        postData(`${awsPath}addPlayer/${this.state.selectedPlayerFirstName}/lastName/${this.state.selectedPlayerLastName}`, {
+            membership: this.state.selectedPlayerFpaNumber,
+            country: this.state.selectedPlayerCountry,
+            gender: this.state.selectedPlayerGender
+        }).then((response) => {
+            console.log(response)
+
+            this.setState({ updateButtonState: updateButtonStates.CreateSuccess })
+
+            this.getAllPlayers()
+        }).catch((error) => {
+            console.error(error)
+        })
     }
 
     render() {
