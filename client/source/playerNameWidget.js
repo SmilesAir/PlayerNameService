@@ -65,7 +65,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
             aliasSearchText: "",
             aliasSearchResults: [],
             updateButtonState: updateButtonStates.Normal,
-            fetchingPlayerData: false,
+            isFectchingPlayerData: false,
             isNewPlayerSelected: false
         }
 
@@ -75,7 +75,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
     }
 
     getAllPlayers() {
-        this.setState({ fetchingPlayerData: true })
+        this.setState({ isFectchingPlayerData: true })
 
         return getData(`${awsPath}getAllPlayers`).then((response) => {
             MainStore.playerData = response.players
@@ -91,7 +91,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
                 })
             }
 
-            this.setState({ fetchingPlayerData: false })
+            this.setState({ isFectchingPlayerData: false })
 
             this.fillSearchResults()
 
@@ -610,7 +610,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
         return (
             <div className="playerNameWidget">
                 <div className="title">Player Data Tool</div>
-                <div className={`loading ${this.state.fetchingPlayerData ? "" : "hidden"}`}>Getting Data from Internet...</div>
+                <div className={`loading ${this.state.isFectchingPlayerData ? "" : "hidden"}`}>Getting Data from Internet...</div>
                 {this.state.isSelectingAlias ? this.getAliasSearchWidget() : this.getSearchWidget()}
                 {this.state.isSelectingAlias ? this.getAliasResultsWidget() : this.getResultsWidget()}
                 {this.state.isSelectingAlias ? <button className="finishAliasButton" onClick={() => this.onFinishAliasEditing()}>Finshed Alias Editing</button> : null}
