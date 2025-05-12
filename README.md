@@ -61,7 +61,11 @@ There are 2 DynamoDB tables. An Info table that store whether the S3 cache needs
 
 When **getAllPlayers** is called, a scan of the Player table is done, then the results are cached in S3. If **removePlayer** or **modifyPlayer** is called, the cache is marked as dirty and the next **getAllPlayers** will scan the Player table and cache the results again.
 
-## Troubleshooting
+## New Player Data Tool
+![alt text](image-7.png)
+Handles all cases of the previous interface, but in a nicer UI.
+
+## Troubleshooting (Deprecated. Use Player Data Tool)
 ### Combining player entries.
 If a person has multiple entries, you can combine them using Assign Alias.
 ![alt text](image-3.png)  
