@@ -16,6 +16,7 @@ require("./index.less")
 
 const awsPath = __STAGE__ === "DEVELOPMENT" ? "https://tkhmiv70u9.execute-api.us-west-2.amazonaws.com/development/" : "https://4wnda3jb78.execute-api.us-west-2.amazonaws.com/production/"
 const countryCodes = [ "AFG", "ALA", "ALB", "DZA", "ASM", "AND", "AGO", "AIA", "ATA", "ATG", "ARG", "ARM", "ABW", "AUS", "AUT", "AZE", "BHS", "BHR", "BGD", "BRB", "BLR", "BEL", "BLZ", "BEN", "BMU", "BTN", "BOL", "BES", "BIH", "BWA", "BVT", "BRA", "IOT", "BRN", "BGR", "BFA", "BDI", "KHM", "CMR", "CAN", "CPV", "CYM", "CAF", "TCD", "CHL", "CHN", "CXR", "CCK", "COL", "COM", "COG", "COD", "COK", "CRI", "CIV", "HRV", "CUB", "CUW", "CYP", "CZE", "DNK", "DJI", "DMA", "DOM", "ECU", "EGY", "SLV", "GNQ", "ERI", "EST", "ETH", "FLK", "FRO", "FJI", "FIN", "FRA", "GUF", "PYF", "ATF", "GAB", "GMB", "GEO", "DEU", "GHA", "GIB", "GRC", "GRL", "GRD", "GLP", "GUM", "GTM", "GGY", "GIN", "GNB", "GUY", "HTI", "HMD", "VAT", "HND", "HKG", "HUN", "ISL", "IND", "IDN", "IRN", "IRQ", "IRL", "IMN", "ISR", "ITA", "JAM", "JPN", "JEY", "JOR", "KAZ", "KEN", "KIR", "PRK", "KOR", "XKX", "KWT", "KGZ", "LAO", "LVA", "LBN", "LSO", "LBR", "LBY", "LIE", "LTU", "LUX", "MAC", "MKD", "MDG", "MWI", "MYS", "MDV", "MLI", "MLT", "MHL", "MTQ", "MRT", "MUS", "MYT", "MEX", "FSM", "MDA", "MCO", "MNG", "MNE", "MSR", "MAR", "MOZ", "MMR", "NAM", "NRU", "NPL", "NLD", "NCL", "NZL", "NIC", "NER", "NGA", "NIU", "NFK", "MNP", "NOR", "OMN", "PAK", "PLW", "PSE", "PAN", "PNG", "PRY", "PER", "PHL", "PCN", "POL", "PRT", "PRI", "QAT", "SRB", "REU", "ROU", "RUS", "RWA", "BLM", "SHN", "KNA", "LCA", "MAF", "SPM", "VCT", "WSM", "SMR", "STP", "SAU", "SEN", "SYC", "SLE", "SGP", "SXM", "SVK", "SVN", "SLB", "SOM", "ZAF", "SGS", "SSD", "ESP", "LKA", "SDN", "SUR", "SJM", "SWZ", "SWE", "CHE", "SYR", "TWN", "TJK", "TZA", "THA", "TLS", "TGO", "TKL", "TON", "TTO", "TUN", "TUR", "XTX", "TKM", "TCA", "TUV", "UGA", "UKR", "ARE", "GBR", "USA", "UMI", "URY", "UZB", "VUT", "VEN", "VNM", "VGB", "VIR", "WLF", "ESH", "YEM", "ZMB", "ZWE" ]
+const urlParams = new URLSearchParams(window.location.search)
 
 function validateKey(value) {
     if (!value) {
@@ -607,198 +608,204 @@ function PlayerNamesApi() {
         debugForm: false
     })
 
-    return (
-        <div>
-            <PlayerNameWidget />
-            <FindPlayerForm.Form>
-                <a href="https://github.com/SmilesAir/PlayerNameService?tab=readme-ov-file#troubleshooting" target="_blank" rel="noopener noreferrer">Instructions/README</a>
-                <h1>
-                    Find Player
-                </h1>
-                <div className="formField">
-                    <label>
-                        First or Last Name: <SearchNameField />
-                    </label>
-                </div>
-                <button type="submit">
-                    Find Players
-                </button>
-            </FindPlayerForm.Form>
-            <PlayerSearchOutput />
-            <AssignAliasForm.Form>
-                <h1>
-                    Assign Alias
-                </h1>
-                <div className="formField">
-                    <label>
-                        Original Player Key: <OriginalPlayerKey />
-                    </label>
-                    <label>
-                        Alias Player Key: <AliasPlayerKey />
-                    </label>
-                </div>
-                <button type="submit">
-                    Assign Alias
-                </button>
-                <button type="errorChecking" onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    checkAliasErrors(true)
-                }}>
-                    Check for Errors
-                </button>
-            </AssignAliasForm.Form>
-            <h1>
-                Get All Players
-            </h1>
+    const version = urlParams.get("v")
+
+    if (version === "2") {
+        return <PlayerNameWidget />
+    } else {
+        return (
             <div>
-                <button onClick={getAllPlayersAndShow}>Get</button>
-                <PlayerOutput />
-            </div>
-            <h1>
-                Import From All Data
-            </h1>
-            <div>
-                <input type="file" accept=".json" onChange={(e) => importFromAllData(e)}/>
-            </div>
-            <AddPlayerForm.Form>
-                <h1>
-                    Add New Player
-                </h1>
-                <div className="formField">
-                    <label>
-                        *First Name: <FirstNameField />
-                    </label>
-                </div>
-                <div className="formField">
-                    <label>
-                        *Last Name: <LastNameField />
-                    </label>
-                </div>
-                <div className="formField">
-                    <label>
-                        FPA Membership #: <MembershipField />
-                    </label>
-                </div>
-                <div className="formField">
-                    <label>
-                        Country: {""}
-                        <SelectField
-                            field="country"
-                            options={countryCodes}
-                        />
-                    </label>
-                </div>
-                <div className="formField">
-                    <label>
-                        Gender: {""}
-                        <SelectField
-                            field="gender"
-                            options={[ "M", "F", "X" ]}
-                        />
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" disabled={!AddPlayerForm.meta.canSubmit}>
-                        Add Player
+                <PlayerNameWidget />
+                <FindPlayerForm.Form>
+                    <a href="https://github.com/SmilesAir/PlayerNameService?tab=readme-ov-file#troubleshooting" target="_blank" rel="noopener noreferrer">Instructions/README</a>
+                    <h1>
+                        Find Player
+                    </h1>
+                    <div className="formField">
+                        <label>
+                            First or Last Name: <SearchNameField />
+                        </label>
+                    </div>
+                    <button type="submit">
+                        Find Players
                     </button>
-                </div>
-            </AddPlayerForm.Form>
-            <AddBulkPlayerForm.Form>
-                <h1>
-                    Add Player Bulk
-                </h1>
-                <div className="formField">
-                    <label>
-                        *Bulk Players: <BulkField />
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" disabled={!AddBulkPlayerForm.meta.canSubmit}>
-                        Add Players
+                </FindPlayerForm.Form>
+                <PlayerSearchOutput />
+                <AssignAliasForm.Form>
+                    <h1>
+                        Assign Alias
+                    </h1>
+                    <div className="formField">
+                        <label>
+                            Original Player Key: <OriginalPlayerKey />
+                        </label>
+                        <label>
+                            Alias Player Key: <AliasPlayerKey />
+                        </label>
+                    </div>
+                    <button type="submit">
+                        Assign Alias
                     </button>
-                </div>
-            </AddBulkPlayerForm.Form>
-            <RemovePlayerForm.Form>
+                    <button type="errorChecking" onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        checkAliasErrors(true)
+                    }}>
+                        Check for Errors
+                    </button>
+                </AssignAliasForm.Form>
                 <h1>
-                    Remove Player
+                    Get All Players
                 </h1>
-                <div className="formField">
-                    <label>
-                        *Key: <KeyField />
-                    </label>
-                </div>
                 <div>
-                    <button type="submit" disabled={!RemovePlayerForm.meta.canSubmit}>
+                    <button onClick={getAllPlayersAndShow}>Get</button>
+                    <PlayerOutput />
+                </div>
+                <h1>
+                    Import From All Data
+                </h1>
+                <div>
+                    <input type="file" accept=".json" onChange={(e) => importFromAllData(e)}/>
+                </div>
+                <AddPlayerForm.Form>
+                    <h1>
+                        Add New Player
+                    </h1>
+                    <div className="formField">
+                        <label>
+                            *First Name: <FirstNameField />
+                        </label>
+                    </div>
+                    <div className="formField">
+                        <label>
+                            *Last Name: <LastNameField />
+                        </label>
+                    </div>
+                    <div className="formField">
+                        <label>
+                            FPA Membership #: <MembershipField />
+                        </label>
+                    </div>
+                    <div className="formField">
+                        <label>
+                            Country: {""}
+                            <SelectField
+                                field="country"
+                                options={countryCodes}
+                            />
+                        </label>
+                    </div>
+                    <div className="formField">
+                        <label>
+                            Gender: {""}
+                            <SelectField
+                                field="gender"
+                                options={[ "M", "F", "X" ]}
+                            />
+                        </label>
+                    </div>
+                    <div>
+                        <button type="submit" disabled={!AddPlayerForm.meta.canSubmit}>
+                            Add Player
+                        </button>
+                    </div>
+                </AddPlayerForm.Form>
+                <AddBulkPlayerForm.Form>
+                    <h1>
+                        Add Player Bulk
+                    </h1>
+                    <div className="formField">
+                        <label>
+                            *Bulk Players: <BulkField />
+                        </label>
+                    </div>
+                    <div>
+                        <button type="submit" disabled={!AddBulkPlayerForm.meta.canSubmit}>
+                            Add Players
+                        </button>
+                    </div>
+                </AddBulkPlayerForm.Form>
+                <RemovePlayerForm.Form>
+                    <h1>
                         Remove Player
-                    </button>
-                </div>
-            </RemovePlayerForm.Form>
-            <ModifyPlayerForm.Form>
-                <h1>
-                    Modify Player
-                </h1>
-                <div className="formField">
-                    <label>
-                        *Key: <KeyField />
-                    </label>
-                </div>
-                <div className="formField">
-                    <label>
-                        *First Name: <FirstNameField />
-                    </label>
-                </div>
-                <div className="formField">
-                    <label>
-                        *Last Name: <LastNameField />
-                    </label>
-                </div>
-                <div className="formField">
-                    <label>
-                        FPA Membership #: <MembershipField />
-                    </label>
-                </div>
-                <div className="formField">
-                    <label>
-                        Country: {""}
-                        <SelectField
-                            field="country"
-                            options={countryCodes}
-                        />
-                    </label>
-                </div>
-                <div className="formField">
-                    <label>
-                        Gender: {""}
-                        <SelectField
-                            field="gender"
-                            options={[ "M", "F", "X" ]}
-                        />
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" disabled={!ModifyPlayerForm.meta.canSubmit}>
+                    </h1>
+                    <div className="formField">
+                        <label>
+                            *Key: <KeyField />
+                        </label>
+                    </div>
+                    <div>
+                        <button type="submit" disabled={!RemovePlayerForm.meta.canSubmit}>
+                            Remove Player
+                        </button>
+                    </div>
+                </RemovePlayerForm.Form>
+                <ModifyPlayerForm.Form>
+                    <h1>
                         Modify Player
-                    </button>
-                </div>
-            </ModifyPlayerForm.Form>
-            <ModifyMembershipBulkForm.Form>
-                <h1>
-                    Modify Membership Bulk
-                </h1>
-                <div className="formField">
-                    <label>
-                        *Bulk Membership: <BulkField />
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" disabled={!ModifyMembershipBulkForm.meta.canSubmit}>
-                        Modify Player
-                    </button>
-                </div>
-            </ModifyMembershipBulkForm.Form>
-        </div>
-    )
+                    </h1>
+                    <div className="formField">
+                        <label>
+                            *Key: <KeyField />
+                        </label>
+                    </div>
+                    <div className="formField">
+                        <label>
+                            *First Name: <FirstNameField />
+                        </label>
+                    </div>
+                    <div className="formField">
+                        <label>
+                            *Last Name: <LastNameField />
+                        </label>
+                    </div>
+                    <div className="formField">
+                        <label>
+                            FPA Membership #: <MembershipField />
+                        </label>
+                    </div>
+                    <div className="formField">
+                        <label>
+                            Country: {""}
+                            <SelectField
+                                field="country"
+                                options={countryCodes}
+                            />
+                        </label>
+                    </div>
+                    <div className="formField">
+                        <label>
+                            Gender: {""}
+                            <SelectField
+                                field="gender"
+                                options={[ "M", "F", "X" ]}
+                            />
+                        </label>
+                    </div>
+                    <div>
+                        <button type="submit" disabled={!ModifyPlayerForm.meta.canSubmit}>
+                            Modify Player
+                        </button>
+                    </div>
+                </ModifyPlayerForm.Form>
+                <ModifyMembershipBulkForm.Form>
+                    <h1>
+                        Modify Membership Bulk
+                    </h1>
+                    <div className="formField">
+                        <label>
+                            *Bulk Membership: <BulkField />
+                        </label>
+                    </div>
+                    <div>
+                        <button type="submit" disabled={!ModifyMembershipBulkForm.meta.canSubmit}>
+                            Modify Player
+                        </button>
+                    </div>
+                </ModifyMembershipBulkForm.Form>
+            </div>
+        )
+    }
 }
 
 function postData(url, data) {
