@@ -591,7 +591,7 @@ module.exports = @MobxReact.observer class PlayerNameWidget extends React.Compon
 
     addPlayer() {
         this.setState({ updateButtonState: updateButtonStates.Creating })
-        postData(`${awsPath}addPlayer/${this.state.selectedPlayerFirstName}/lastName/${this.state.selectedPlayerLastName}`, {
+        postData(`${awsPath}addPlayer/${this.state.selectedPlayerFirstName.trim()}/lastName/${this.state.selectedPlayerLastName.trim()}`, {
             membership: this.state.selectedPlayerFpaNumber,
             country: this.state.selectedPlayerCountry,
             gender: this.state.selectedPlayerGender
